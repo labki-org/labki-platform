@@ -42,16 +42,22 @@ $wgEnableUploads = true;
 ```
 
 ### 3. Adding Extensions
-Labki comes with a powerful set of bundled extensions (Semantic MediaWiki, PageForms, etc.).
-To enable **additional** extensions:
+Labki comes with a powerful set of curated extensions (Semantic MediaWiki, PageForms, etc.) enabled by default.
 
-1.  **Bundled but disabled**: If the extension is inside the image but not on by default, just add it to `config/extensions.user.php`:
+To enable **additional** extensions, add `wfLoadExtension` calls to your `config/LocalSettings.user.php`:
+
+**A. Bundled Extensions** (Built-in but disabled by default)
+```php
+wfLoadExtension( 'VisualEditor' );
+```
+
+**B. Your Custom Extensions**
+1.  Download/Clone the extension into the `mw-user-extensions/` folder.
+    *   Example: `mw-user-extensions/MycoolExtension`
+2.  Load it in `config/LocalSettings.user.php` with the correct path:
     ```php
-    return [
-       'VisualEditor', // Example
-    ];
+    wfLoadExtension( 'MycoolExtension', '/mw-user-extensions/MycoolExtension/extension.json' );
     ```
-2.  **User-supplied**: Download the extension into `mw-user-extensions/MyExtension` and add it to `config/extensions.user.php`.
 
 ## Maintenance
 

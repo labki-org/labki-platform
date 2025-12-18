@@ -14,14 +14,21 @@ The platform defines a single authoritative MediaWiki environment. All platform-
 -   **Immutable Platform Config**: `LocalSettings.base.php` and `extensions.platform.php` are burned into the image.
 -   **Layered User Config**: Users invoke `LocalSettings.user.php` and `extensions.user.php` to customize their instance without forking the platform.
 
+## Documentation
+
+-   **[Technical Contract](docs/contract.md)**: Specifications for environment variables, paths, and platform behavior.
+-   **[User Guide](runtime/README.md)**: How to deploy and configure the runtime distribution.
+-   **[Extension Dev Guide](docs/extension-dev-guide.md)**: How to use this platform to test your own extensions.
+
 ## Repository Structure
 
 -   `docker/`: Dockerfile and entrypoint logic.
 -   `mediawiki/`: Platform configuration files (`LocalSettings.base.php`, `bootstrap.php`, etc.).
 -   `composer/`: Platform-level Composer dependencies.
--   `extensions-vcs/`: Definitions for git-only extensions included in the platform.
+-   `extensions-git/`: Definitions for git-only extensions included in the platform.
 -   `scripts/`: Helper scripts for installation, DB waiting, and resets.
 -   `runtime/`: **(Preview)** The source code for the user-facing `labki` repository.
+-   `compose/`: Developer harness compose files.
 
 ## Development Workflow
 
@@ -33,5 +40,5 @@ Developers should use the tools in this repo to build and verify the platform im
 
 ## Contributing
 
--   **Platform Changes**: Edit `mediawiki/` or `composer/` to change the base platform. behavior.
--   **New Extensions**: Add to `composer/composer.platform.json` or `extensions-vcs/sources.yaml`.
+-   **Platform Changes**: Edit `mediawiki/` or `composer/` to change the base platform behavior.
+-   **New Extensions**: Add to `composer/composer.platform.json` or `extensions-git/sources.txt`.
