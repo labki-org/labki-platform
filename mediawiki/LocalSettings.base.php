@@ -4,8 +4,8 @@
 // This file is immutable and baked into the image.
 
 // Protect against web entry
-if ( !defined( 'MEDIAWIKI' ) ) {
-	exit;
+if (!defined('MEDIAWIKI')) {
+    exit;
 }
 
 // 1. Database Configuration (From Env Vars)
@@ -21,6 +21,7 @@ $wgDBpassword = getenv('MW_DB_PASSWORD') ?: '';
 $wgSitename = getenv('MW_SITE_NAME') ?: 'Labki';
 $wgMetaNamespace = "Project"; // Default
 $wgScriptPath = getenv('MW_SCRIPT_PATH') ?: "/w";
+$wgArticlePath = getenv('MW_ARTICLE_PATH') ?: "/wiki/$1";
 $wgServer = getenv('MW_SERVER') ?: "http://localhost:8080";
 
 // 3. Object Cache
@@ -39,7 +40,7 @@ $wgImageMagickConvertCommand = "/usr/bin/convert";
 // In this platform, we usually run a separate jobrunner container, so we might want to set this to 0
 // BUT, setting it to 0 without a runner configured breaks things.
 // Safe default: let the user invoke the jobrunner script or set this to false in LocalSettings.user.php
-$wgJobRunRate = 1; 
+$wgJobRunRate = 1;
 
 // 6. Permissions
 $wgGroupPermissions['*']['createaccount'] = false;

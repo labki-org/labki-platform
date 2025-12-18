@@ -23,9 +23,12 @@ SCRIPT_PATH="${MW_SCRIPT_PATH:-/w}"
 if [[ "$SCRIPT_PATH" != /* ]]; then SCRIPT_PATH="/$SCRIPT_PATH"; fi
 
 if [ -n "$SCRIPT_PATH" ]; then
-    echo "[entrypoint] Configuring Apache Alias for Short URLs: $SCRIPT_PATH -> /var/www/html"
-    echo "Alias $SCRIPT_PATH /var/www/html" > /etc/apache2/conf-enabled/short-url.conf
-    # Reload not needed here as we haven't started Apache yet (it's exec'd at end)
+    echo "[entrypoint] Configuring Apache Alias & Rewrites for Short URLs"
+    {
+        echo "Alias $SCRIPT_PATH /var/www/html"
+        echo "RewriteEngine On"
+        echo "RewriteRule ^/?wiki(/.*)?$ %{DOCUMENT_ROOT}/index.php [L]"
+    } > /etc/apache2/conf-enabled/short-url.conf
 fi
 
 # 1. Wait for Database
