@@ -1,0 +1,33 @@
+{
+  "require": {
+    "mediawiki/semantic-media-wiki": "~6.0",
+    "mediawiki/semantic-result-formats": "~5.1",
+    "mediawiki/page-forms": "~6",
+    "mediawiki/maps": "~12",
+    "mediawiki/semantic-extra-special-properties": "~4",
+    "mediawiki/semantic-compound-queries": "~3",
+    "wikimedia/composer-merge-plugin": "^2.0",
+    "mediawiki/mermaid": "~6.0.1",
+    "mediawiki/bootstrap": "~5.0",
+    "scssphp/scssphp": "~1.11"
+  },
+  "config": {
+    "allow-plugins": {
+      "composer/installers": true,
+      "wikimedia/composer-merge-plugin": true
+    }
+  },
+  "extra": {
+    "installer-paths": {
+      "extensions/{$name}/": ["type:mediawiki-extension"]
+    },
+    "merge-plugin": {
+      "include": [
+        "extensions/*/composer.json"
+      ],
+      "recurse": true,
+      "replace": false,
+      "merge-dev": false
+    }
+  }
+}
