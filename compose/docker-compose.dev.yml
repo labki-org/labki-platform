@@ -1,0 +1,61 @@
+services:
+  db:
+    image: mariadb:10.11
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: labki
+      MARIADB_USER: labki
+      MARIADB_PASSWORD: labki_pass
+      MARIADB_ROOT_PASSWORD: root_pass
+    volumes:
+      - labki_platform_db-data:/var/lib/mysql
+
+  wiki:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      MW_DB_HOST: db
+      MW_DB_NAME: labki
+      MW_DB_USER: labki
+      MW_DB_PASSWORD: labki_pass
+      MW_SITE_NAME: "Labki Dev"
+      MW_ADMIN_PASS: "dev_pass"
+      # Enable platform extensions in dev by default (set to 1 to test clean slate)
+      # MW_DISABLE_PLATFORM_EXTENSIONS: 0
+    volumes:
+      # In dev, we can override platform configs if we really need to test changes
+      # - ../mediawiki:/opt/labki/mediawiki
+      # Mount a specific extension for development (PATTERN A)
+      # - ../../MyExtension:/var/www/html/extensions/MyExtension
+      # Persist user extension code if using Pattern B
+      - mw-user-extensions:/mw-user-extensions
+      - images:/var/www/html/images
+    depends_on:
+      - db
+
+  wiki-jobrunner:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+    restart: unless-stopped
+    environment:
+      MW_DB_HOST: db
+      MW_DB_NAME: labki
+      MW_DB_USER: labki
+      MW_DB_PASSWORD: labki_pass
+    volumes:
+      - mw-user-extensions:/mw-user-extensions
+      - images:/var/www/html/images
+    depends_on:
+      - db
+      - wiki
+    command: [ "/opt/labki/scripts/run-jobrunner.sh" ]
+
+volumes:
+  labki_platform_db-data:
+  images:
+  mw-user-extensions:
