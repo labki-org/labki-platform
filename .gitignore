@@ -1,0 +1,29 @@
+# System / IDE
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
+docker/logs/
+
+# Secrets & Local Config (Runtime)
+runtime/config/secrets.env
+runtime/config/LocalSettings.user.php
+runtime/config/extensions.user.php
+# Ignore any other non-example files in config if they are created locally
+!runtime/config/*.example
+
+# Docker Volumes (prevent committing mounted data)
+labki_platform_db-data/
+mw-data/
+images/
+
+# Composer / Node
+vendor/
+node_modules/
+
+# Temporary
+tmp/

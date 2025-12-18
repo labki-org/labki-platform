@@ -23,7 +23,7 @@ RUN chmod +x /usr/local/bin/clone-extensions.sh && /usr/local/bin/clone-extensio
 
 # 2. Install Platform Composer Dependencies
 # We copy the platform composer config to the root
-COPY composer/composer.platform.json /var/www/html/composer.json
+COPY composer/composer.platform.json /var/www/html/composer.local.json
 # Note: In a real production build, we would also copy composer.lock here.
 # COPY composer/composer.lock /var/www/html/composer.lock
 

@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
+set -x
+
+if [ "${DEBUG_ENTRYPOINT:-}" == "1" ]; then
+    echo "DEBUG_ENTRYPOINT set. Sleeping forever..."
+    exec tail -f /dev/null
+fi
 
 # Load secrets if present (for runtime mounting mechanism)
 if [ -f /mw-config/secrets.env ]; then
@@ -8,6 +14,18 @@ if [ -f /mw-config/secrets.env ]; then
   set -a
   source /mw-config/secrets.env
   set +a
+fi
+
+# Handle Short URLs (e.g. /w -> /var/www/html)
+# We use Apache Alias instead of symlinks to avoid permissions/loop issues.
+SCRIPT_PATH="${MW_SCRIPT_PATH:-/w}"
+# Ensure it starts with a slash for Apache config
+if [[ "$SCRIPT_PATH" != /* ]]; then SCRIPT_PATH="/$SCRIPT_PATH"; fi
+
+if [ -n "$SCRIPT_PATH" ]; then
+    echo "[entrypoint] Configuring Apache Alias for Short URLs: $SCRIPT_PATH -> /var/www/html"
+    echo "Alias $SCRIPT_PATH /var/www/html" > /etc/apache2/conf-enabled/short-url.conf
+    # Reload not needed here as we haven't started Apache yet (it's exec'd at end)
 fi
 
 # 1. Wait for Database

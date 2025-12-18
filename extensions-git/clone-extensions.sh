@@ -14,6 +14,12 @@ echo "Reading extensions from $SOURCES_FILE..."
 while read -r name url ref type; do
     # Skip comments
     [[ "$name" =~ ^#.*$ ]] && continue
+    # Remove carriage returns from variables to handle DOS line endings
+    name=$(echo "$name" | tr -d '\r')
+    url=$(echo "$url" | tr -d '\r')
+    ref=$(echo "$ref" | tr -d '\r')
+    type=$(echo "$type" | tr -d '\r')
+    
     # Skip empty lines
     [ -z "$name" ] && continue
 

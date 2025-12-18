@@ -1,23 +1,20 @@
 <?php
-
-// extensions.platform.php - Platform-curated extension set
-// This file loads the extensions that are verified and bundled with the platform.
-
+// extensions.platform.php - Curated Platform Extensions
 if (!defined('MEDIAWIKI')) {
     exit;
 }
 
 // Semantic MediaWiki Ecosystem
-// Note: Composer autoploader has already been included by MediaWiki core (via entrypoint/WebStart)
-// IF we use the standard composer install. However, for some extensions we might need explicit enables.
-// SMW usually requires 'enableSemantics'.
+// Note: Installed via Composer into vendor/ directory.
+// We still need to call enableSemantics/wfLoadExtension to activate them in MW registry.
 
 // Load SMW
 wfLoadExtension('SemanticMediaWiki');
-enableSemantics($wgServer); // Default to $wgServer
+enableSemantics($wgServer); // Required to activate SMW
 
 // SMW Satellites
 wfLoadExtension('SemanticResultFormats');
+// SemanticCompoundQueries might be autoloaded by SMW or Composer, but explicit load is safe if in vendor
 wfLoadExtension('SemanticCompoundQueries');
 wfLoadExtension('SemanticExtraSpecialProperties');
 
@@ -25,13 +22,12 @@ wfLoadExtension('SemanticExtraSpecialProperties');
 wfLoadExtension('PageForms');
 wfLoadExtension('Maps');
 wfLoadExtension('Mermaid');
-wfLoadExtension('Bootstrap'); // From bootstrap extension
+wfLoadExtension('Bootstrap');
 
-// Labki Extensions
+// Labki Extensions (Git Cloned into extensions/)
 wfLoadExtension('MsUpload');
 wfLoadExtension('PageSchemas');
 wfLoadExtension('Lockdown');
-wfLoadExtension('LabkiPackManager');
 
 // Skins
 wfLoadSkin('Citizen');
