@@ -39,6 +39,11 @@ The following environment variables constitute the public API for configuring th
 | `MW_DB_USER` | `labki` | Database user. |
 | `MW_DB_PASSWORD` | `labki_pass` | Database password. |
 
+### Development / Test Control
+| Variable | Default | Description |
+| :--- | :--- | :--- |
+| `MW_DISABLE_PLATFORM_EXTENSIONS` | `0` (False) | If set to `1`, skips loading the curated extension set (`extensions.platform.php`). Allows for clean-slate testing. |
+
 ### Site Identity (Install Time Only)
 *These depend on the `install-mediawiki.sh` script logic and are typically used only during the initial installation.*
 | Variable | Default | Description |
