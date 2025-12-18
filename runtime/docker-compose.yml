@@ -1,0 +1,55 @@
+services:
+  db:
+    image: mariadb:10.11
+    restart: unless-stopped
+    env_file:
+      - config/secrets.env
+    environment:
+      MARIADB_DATABASE: ${MW_DB_NAME:-labki}
+      MARIADB_USER: ${MW_DB_USER:-labki}
+      MARIADB_PASSWORD: ${MW_DB_PASSWORD:-labki_pass}
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-root_pass}
+    volumes:
+      - db-data:/var/lib/mysql
+
+  wiki:
+    # TODO: Replace with your actual published image tag
+    image: labki-wiki:latest
+    build: .. # Convenience for dev/testing from the platform repo
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    env_file:
+      - config/secrets.env
+    environment:
+      MW_DB_HOST: db
+    volumes:
+      # Mount configuration
+      - ./config:/mw-config
+      # Mount uploads
+      - ./images:/var/www/html/images
+      # Mount user code
+      - ./mw-user-extensions:/mw-user-extensions
+    depends_on:
+      - db
+
+  wiki-jobrunner:
+    image: labki-wiki:latest
+    build: ..
+    restart: unless-stopped
+    env_file:
+      - config/secrets.env
+    environment:
+      MW_DB_HOST: db
+    volumes:
+      - ./config:/mw-config
+      - ./images:/var/www/html/images
+      - ./mw-user-extensions:/mw-user-extensions
+    depends_on:
+      - db
+      - wiki
+    # Override the default command to run the jobrunner
+    command: [ "/opt/labki/scripts/run-jobrunner.sh" ]
+
+volumes:
+  db-data:

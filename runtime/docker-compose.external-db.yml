@@ -1,0 +1,21 @@
+services:
+  # Disable the bundled database
+  db:
+    profiles: [ "disabled" ]
+
+  # Wiki connects to external host defined in secrets.env
+  wiki:
+    environment:
+      # We explicitly pass these through, though secrets.env usually handles it.
+      # This ensures docker-compose logic is clear.
+      MW_DB_HOST: ${MW_DB_HOST}
+      MW_DB_NAME: ${MW_DB_NAME}
+      MW_DB_USER: ${MW_DB_USER}
+      MW_DB_PASSWORD: ${MW_DB_PASSWORD}
+
+  wiki-jobrunner:
+    environment:
+      MW_DB_HOST: ${MW_DB_HOST}
+      MW_DB_NAME: ${MW_DB_NAME}
+      MW_DB_USER: ${MW_DB_USER}
+      MW_DB_PASSWORD: ${MW_DB_PASSWORD}

@@ -24,8 +24,7 @@ The configuration is loaded in a strict order of precedence (lowest to highest).
 | **Base** | `/opt/labki/mediawiki/LocalSettings.base.php` | Platform | DB connection, cache config, jobrunner. **Never edited by users.** |
 | **Defaults** | `/opt/labki/mediawiki/LocalSettings.defaults.php` | Platform | Safe defaults (logging, memory limits). |
 | **Platform Exts** | `/opt/labki/mediawiki/extensions.platform.php` | Platform | Curated set (SMW, PageForms, etc.). Explicit `wfLoadExtension`. |
-| **User Exts** | `/mw-config/extensions.user.php` | User | **Declarative list** of optional extensions to load. |
-| **User Config** | `/mw-config/LocalSettings.user.php` | User | Site identity, secrets, overrides. **Highest precedence.** |
+| **User Config** | `/mw-config/LocalSettings.user.php` | User | Site identity, secrets, overrides, extension loading. **Highest precedence.** |
 
 ## 3. Public Interface (Environment Variables)
 

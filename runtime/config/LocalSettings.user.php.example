@@ -1,0 +1,62 @@
+<?php
+
+// LocalSettings.user.php
+// ----------------------
+// This file is the LAST file loaded by MediaWiki. 
+// Use it to override any defaults, add secrets, or configure extensions.
+//
+// This file is NOT overwritten on upgrades. It is yours to keep.
+
+if ( !defined( 'MEDIAWIKI' ) ) {
+	exit;
+}
+
+// ----------------------
+// 1. Branding
+// ----------------------
+
+// $wgLogo = "$wgScriptPath/resources/assets/wiki.png";
+// $wgFavicon = "$wgScriptPath/images/favicon.ico";
+
+// ----------------------
+// 2. Permissions
+// ----------------------
+
+// Allow users to edit? (Default is false in Labki Platform)
+// $wgGroupPermissions['*']['edit'] = true;
+
+// Allow account creation?
+// $wgGroupPermissions['*']['createaccount'] = true;
+
+// ----------------------
+// 3. Uploads
+// ----------------------
+
+// Uploads are enabled by default in the platform.
+// $wgUploadDirectory is set to /var/www/html/images (mounted vol).
+
+// To allow more file types:
+// $wgFileExtensions = array_merge( $wgFileExtensions, [
+//     'pdf', 'svg', 'docx' 
+// ] );
+
+// ----------------------
+// 4. Extensions
+// ----------------------
+
+// A) Enable Bundled Extensions (already in the image)
+// wfLoadExtension( 'VisualEditor' );
+// wfLoadExtension( 'CodeEditor' );
+
+// B) Enable User-Mounted Extensions (in mw-user-extensions/ folder)
+// To use these, you must first clone the extension code into 'mw-user-extensions/MyExtension'.
+// Then load it by pointing to the extension.json file:
+// wfLoadExtension( 'MyExtension', '/mw-user-extensions/MyExtension/extension.json' );
+
+// ----------------------
+// 5. Debugging
+// ----------------------
+
+// Uncomment to see errors on screen (NOT for production!)
+// $wgShowExceptionDetails = true;
+// $wgUploadMaintenance = true; // Use if you hit upload size limits in dev
