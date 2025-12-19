@@ -20,7 +20,7 @@ $wgDBpassword = getenv('MW_DB_PASSWORD') ?: '';
 // These defaults are critical for the first run before the DB is populated.
 $wgSitename = getenv('MW_SITE_NAME') ?: 'Labki';
 $wgMetaNamespace = "Project"; // Default
-$wgScriptPath = getenv('MW_SCRIPT_PATH') ?: "/w";
+$wgScriptPath = getenv('MW_SCRIPT_PATH') ?: "";
 $wgArticlePath = getenv('MW_ARTICLE_PATH') ?: "/wiki/$1";
 $wgServer = getenv('MW_SERVER') ?: "http://localhost:8080";
 

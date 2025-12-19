@@ -18,7 +18,7 @@ php /var/www/html/maintenance/install.php \
   --dbuser="${MW_DB_USER:-labki}" \
   --dbpass="${MW_DB_PASSWORD:-labki_pass}" \
   --server="${MW_SERVER:-http://localhost:8080}" \
-  --scriptpath="${MW_SCRIPT_PATH:-/w}" \
+  --scriptpath="${MW_SCRIPT_PATH:-}" \
   --lang="${MW_SITE_LANG:-en}" \
   --pass="${MW_ADMIN_PASS:-change-me}" \
   "${MW_SITE_NAME:-Labki}" \
