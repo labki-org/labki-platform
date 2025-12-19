@@ -9,7 +9,7 @@ WORKDIR /var/www/html
 # unzip: for composer
 # mariadb-client: for checking db status
 RUN apt-get update && apt-get install -y \
-    git unzip ca-certificates mariadb-client \
+    git unzip ca-certificates mariadb-client curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Composer

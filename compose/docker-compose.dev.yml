@@ -36,6 +36,11 @@ services:
       # - images:/var/www/html/images
     depends_on:
       - db
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:80/wiki/Main_Page" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   wiki-jobrunner:
     build:

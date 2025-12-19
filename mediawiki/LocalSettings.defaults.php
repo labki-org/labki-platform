@@ -22,5 +22,11 @@ $wgDebugLogFile = "php://stderr";
 ini_set('display_errors', 0);
 $wgShowExceptionDetails = false;
 
+// Job Queue - Force to background runner (avoids UI lag)
+$wgJobRunRate = 0;
+
+// Uploads - Enabled by default
+$wgEnableUploads = true;
+
 // Cookie Secure (Auto-detect)
 // $wgCookieSecure = 'detect'; // MW default is usually fine
