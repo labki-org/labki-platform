@@ -24,7 +24,7 @@ count=0
 success=false
 
 while [ $count -lt $MAX_RETRIES ]; do
-    if curl -s -o /dev/null -w "%{http_code}" http://localhost:8080 | grep -q "200"; then
+    if curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/wiki/Main_Page | grep -q "200"; then
         echo "[smoke-test] Wiki is responding (HTTP 200)!"
         success=true
         break
