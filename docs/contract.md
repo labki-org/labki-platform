@@ -61,6 +61,7 @@ The following environment variables constitute the public API for configuring th
 | `./config/` | `/mw-config/` | Contains `secrets.env`, `LocalSettings.user.php`, `extensions.user.php`. |
 | `./images/` | `/var/www/html/images` | User uploads. |
 | `./mw-user-extensions/` | `/mw-user-extensions` | Code for user-supplied extensions not in the platform image. |
+| `./mw-user-skins/` | `/mw-user-skins` | Code for user-supplied skins not in the platform image. |
 
 ## 5. Upgrade & Reset Behavior
 

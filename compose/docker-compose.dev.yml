@@ -31,8 +31,11 @@ services:
       # - ../mediawiki:/opt/labki/mediawiki
       # Mount a specific extension for development (PATTERN A)
       # - ../../MyExtension:/var/www/html/extensions/MyExtension
+      # Mount a specific skin for development
+      # - ../../MySkin:/mw-user-skins/MySkin
       # Persist user extension code if using Pattern B
       # - mw-user-extensions:/mw-user-extensions
+      # - mw-user-skins:/mw-user-skins
       # - images:/var/www/html/images
     depends_on:
       - db
@@ -54,6 +57,7 @@ services:
       MW_DB_PASSWORD: labki_pass
       # volumes:
       # - mw-user-extensions:/mw-user-extensions
+      # - mw-user-skins:/mw-user-skins
       # - images:/var/www/html/images
     depends_on:
       - db
@@ -64,3 +68,4 @@ services:
 #   labki_platform_db-data:
 #   images:
 #   mw-user-extensions:
+#   mw-user-skins:

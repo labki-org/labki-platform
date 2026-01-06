@@ -30,6 +30,7 @@ services:
       - ./images:/var/www/html/images
       # Mount user code
       - ./mw-user-extensions:/mw-user-extensions
+      - ./mw-user-skins:/mw-user-skins
     depends_on:
       - db
 
@@ -45,6 +46,7 @@ services:
       - ./config:/mw-config
       - ./images:/var/www/html/images
       - ./mw-user-extensions:/mw-user-extensions
+      - ./mw-user-skins:/mw-user-skins
     depends_on:
       - db
       - wiki

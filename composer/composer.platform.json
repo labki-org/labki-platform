@@ -9,7 +9,8 @@
         "wikimedia/composer-merge-plugin": "^2.0",
         "mediawiki/mermaid": "~6.0.1",
         "mediawiki/bootstrap": "~5.0",
-        "scssphp/scssphp": "~1.11"
+        "scssphp/scssphp": "~1.11",
+        "mediawiki/chameleon-skin": "~5.0"
     },
     "config": {
         "allow-plugins": {
@@ -21,6 +22,9 @@
         "installer-paths": {
             "extensions/{$name}/": [
                 "type:mediawiki-extension"
+            ],
+            "skins/{$name}/": [
+                "type:mediawiki-skin"
             ]
         },
         "merge-plugin": {

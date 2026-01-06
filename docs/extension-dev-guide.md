@@ -120,3 +120,141 @@ If you just mount it and load it, MediaWiki might crash because the class is def
     ```
 
 This gives you full control: you use the Platform's runtime environment, but you decide exactly which code is loaded.
+
+---
+
+# Skin Development Guide
+
+The Labki Platform also supports developing and testing custom MediaWiki skins. The workflow mirrors extension development, using a `/mw-user-skins` mount point.
+
+## Platform Skins
+
+The Platform bundles two skins:
+-   **Citizen** (default) - A modern, responsive skin
+-   **Chameleon** - A highly customizable Bootstrap-based skin, ideal as a base for child skins
+
+## Basic Skin Development Setup
+
+### 1. Docker Compose for Skin Development
+
+Create a `docker-compose.yml` in your **skin's repository**:
+
+```yaml
+services:
+  db:
+    image: mariadb:10.11
+    environment:
+      MARIADB_DATABASE: labki
+      MARIADB_USER: labki
+      MARIADB_PASSWORD: labki_pass
+      MARIADB_ROOT_PASSWORD: root_pass
+    volumes:
+      - db-data:/var/lib/mysql
+
+  wiki:
+    image: labki-wiki:latest
+    ports:
+      - "8080:80"
+    environment:
+      MW_DB_HOST: db
+      MW_DB_NAME: labki
+      MW_DB_USER: labki
+      MW_DB_PASSWORD: labki_pass
+      MW_ADMIN_USER: admin
+      MW_ADMIN_PASS: secret
+      # Keep platform extensions enabled (skins often need them)
+      MW_DISABLE_PLATFORM_EXTENSIONS: 0
+    volumes:
+      # Mount YOUR skin code into the container
+      - ./:/mw-user-skins/MySkin
+      # Mount a config file to load and activate your skin
+      - ./tests/LocalSettings.test.php:/mw-config/LocalSettings.user.php
+    depends_on:
+      - db
+
+volumes:
+  db-data:
+```
+
+### 2. The Test Config (`tests/LocalSettings.test.php`)
+
+In your skin repo, create a `tests/LocalSettings.test.php`:
+
+```php
+<?php
+// Load your skin from the mount point
+wfLoadSkin( 'MySkin', '/mw-user-skins/MySkin/skin.json' );
+
+// Set your skin as the default
+$wgDefaultSkin = 'myskin';
+
+// Optional: Enable debug mode
+$wgShowExceptionDetails = true;
+```
+
+### 3. Running Your Skin
+
+1.  **Start the environment**:
+    ```bash
+    docker compose up -d
+    ```
+2.  **Visit the wiki** at `http://localhost:8080` to see your skin in action.
+
+## Developing Chameleon Child Skins
+
+The Labki Platform includes [Chameleon](https://github.com/ProfessionalWiki/chameleon), a powerful Bootstrap-based skin that supports customization through child skins.
+
+### Setting Up a Chameleon Child Skin
+
+1.  **Keep platform extensions enabled** so Chameleon is loaded:
+    ```yaml
+    MW_DISABLE_PLATFORM_EXTENSIONS: 0
+    ```
+
+2.  **In your `LocalSettings.test.php`**, load your child skin after Chameleon:
+    ```php
+    <?php
+    // Chameleon is already loaded by the platform
+    // Load your child skin
+    wfLoadSkin( 'MyCustomChameleon', '/mw-user-skins/MyCustomChameleon/skin.json' );
+
+    // Set your child skin as the default
+    $wgDefaultSkin = 'mycustomchameleon';
+
+    // Chameleon configuration options
+    $egChameleonLayoutFile = '/mw-user-skins/MyCustomChameleon/layouts/custom.xml';
+    ```
+
+## Recipe: Overriding a Bundled Skin
+
+If you want to develop a modified version of a skin that's already bundled (e.g. Citizen), follow this approach:
+
+1.  Set `MW_DISABLE_PLATFORM_EXTENSIONS: 1` to prevent the bundled version from loading.
+2.  In your `LocalSettings.test.php`, manually load only what you need:
+    ```php
+    <?php
+    // Load platform extensions you depend on (but not skins)
+    wfLoadExtension( 'SemanticMediaWiki' );
+    enableSemantics( $wgServer );
+
+    // Load YOUR local version of the skin from the mount
+    wfLoadSkin( 'Citizen', '/mw-user-skins/Citizen/skin.json' );
+    $wgDefaultSkin = 'citizen';
+    ```
+
+## Clean Slate Skin Testing
+
+For testing a skin in isolation (no platform extensions):
+
+```yaml
+MW_DISABLE_PLATFORM_EXTENSIONS: 1
+```
+
+Then in `LocalSettings.test.php`:
+
+```php
+<?php
+// Load only your skin - no platform extensions
+wfLoadSkin( 'MySkin', '/mw-user-skins/MySkin/skin.json' );
+$wgDefaultSkin = 'myskin';
+```

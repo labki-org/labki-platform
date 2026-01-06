@@ -31,4 +31,5 @@ wfLoadExtension('Lockdown');
 
 // Skins
 wfLoadSkin('Citizen');
+wfLoadSkin('chameleon');
 $wgDefaultSkin = 'citizen';

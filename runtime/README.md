@@ -59,6 +59,23 @@ wfLoadExtension( 'VisualEditor' );
     wfLoadExtension( 'MycoolExtension', '/mw-user-extensions/MycoolExtension/extension.json' );
     ```
 
+### 4. Adding Skins
+Labki includes two skins by default: **Citizen** (the default) and **Chameleon** (a Bootstrap-based skin ideal for customization).
+
+To change the default skin, add to your `config/LocalSettings.user.php`:
+```php
+$wgDefaultSkin = 'chameleon';
+```
+
+**Adding Custom Skins**
+1.  Download/Clone the skin into the `mw-user-skins/` folder.
+    *   Example: `mw-user-skins/MyCustomSkin`
+2.  Load it in `config/LocalSettings.user.php` with the correct path:
+    ```php
+    wfLoadSkin( 'MyCustomSkin', '/mw-user-skins/MyCustomSkin/skin.json' );
+    $wgDefaultSkin = 'mycustomskin';
+    ```
+
 ## Maintenance
 
 ### Upgrading
