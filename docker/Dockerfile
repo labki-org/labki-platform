@@ -1,6 +1,11 @@
 ARG MEDIAWIKI_VERSION=1.44
 FROM mediawiki:${MEDIAWIKI_VERSION}
 
+LABEL org.opencontainers.image.title="Labki Platform"
+LABEL org.opencontainers.image.description="Pre-configured MediaWiki distribution with Semantic MediaWiki and curated extensions"
+LABEL org.opencontainers.image.source="https://github.com/labki-org/labki-platform"
+LABEL org.opencontainers.image.vendor="Labki"
+
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 WORKDIR /var/www/html
 
@@ -28,7 +33,7 @@ COPY composer/composer.platform.json /var/www/html/composer.local.json
 # COPY composer/composer.lock /var/www/html/composer.lock
 
 # Run composer update (or install if lock exists)
-# We use 'update' because we haven't generated the lock file in the platform repo yet. 
+# We use 'update' because we haven't generated the lock file in the platform repo yet.
 # Once generated, we should switch to 'install'.
 RUN composer update --no-dev --prefer-dist --no-interaction --no-progress
 
@@ -43,6 +48,10 @@ RUN chown -R www-data:www-data /var/www/html/extensions /var/www/html/skins /var
     && chmod +x /entrypoint.sh /opt/labki/scripts/*.sh
 
 ENV APACHE_DOCUMENT_ROOT=/var/www/html
+
+# Health check - verify Apache is responding
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost/wiki/Main_Page || exit 1
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["apache2-foreground"]

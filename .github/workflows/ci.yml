@@ -7,13 +7,48 @@ on:
     branches: [ "main" ]
 
 jobs:
-  smoke-test:
+  lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+
+      - name: ShellCheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: './scripts'
+          additional_files: 'docker/entrypoint.sh ci/smoke-test.sh'
+
+      - name: PHP Syntax Check
+        run: |
+          for file in $(find mediawiki -name "*.php"); do
+            php -l "$file"
+          done
+
+  smoke-test:
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
       - name: Make scripts executable
-        run: chmod +x ci/smoke-test.sh scripts/*.sh
+        run: chmod +x ci/smoke-test.sh scripts/*.sh docker/entrypoint.sh
 
       - name: Run Smoke Test
         run: ./ci/smoke-test.sh
+
+  security-scan:
+    needs: smoke-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image for scanning
+        run: docker build -t labki-scan:ci -f docker/Dockerfile .
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'labki-scan:ci'
+          format: 'table'
+          exit-code: '0'  # Don't fail on vulnerabilities (info only)
+          severity: 'CRITICAL,HIGH'

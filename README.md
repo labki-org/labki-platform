@@ -1,5 +1,9 @@
 # Labki Platform
 
+[![CI](https://github.com/labki-org/labki-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/labki-org/labki-platform/actions/workflows/ci.yml)
+[![Publish](https://github.com/labki-org/labki-platform/actions/workflows/publish.yml/badge.svg)](https://github.com/labki-org/labki-platform/actions/workflows/publish.yml)
+[![License](https://img.shields.io/github/license/labki-org/labki-platform)](LICENSE)
+
 The **Labki Platform** (`labki-platform`) is the foundational repository for the Labki MediaWiki distribution. It serves two distinct but related purposes:
 
 1.  **Development Harness**: A centralized environment where developers can mount extensions, test changes, and reset the instance quickly.
@@ -19,6 +23,7 @@ The platform defines a single authoritative MediaWiki environment. All platform-
 -   **[Technical Contract](docs/contract.md)**: Specifications for environment variables, paths, and platform behavior.
 -   **[User Guide](runtime/README.md)**: How to deploy and configure the runtime distribution.
 -   **[Extension Dev Guide](docs/extension-dev-guide.md)**: How to use this platform to test your own extensions.
+-   **[Changelog](CHANGELOG.md)**: Release history and notable changes.
 
 ## Repository Structure
 
@@ -40,5 +45,7 @@ Developers should use the tools in this repo to build and verify the platform im
 
 ## Contributing
 
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on:
 -   **Platform Changes**: Edit `mediawiki/` or `composer/` to change the base platform behavior.
 -   **New Extensions**: Add to `composer/composer.platform.json` or `extensions-git/sources.txt`.
+
