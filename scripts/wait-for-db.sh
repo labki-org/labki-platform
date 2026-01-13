@@ -7,7 +7,7 @@ pass="${MW_DB_PASSWORD:-labki_pass}"
 
 echo "[wait-for-db] Waiting for database at $host..."
 
-for i in {1..60}; do
+for _ in {1..60}; do
   if MYSQL_PWD="$pass" mysql --ssl=0 --protocol=TCP -h "$host" -u "$user" -e "SELECT 1" >/dev/null 2>&1; then
     echo "[wait-for-db] Database is ready!"
     exit 0
