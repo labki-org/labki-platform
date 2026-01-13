@@ -30,3 +30,12 @@ $wgEnableUploads = true;
 
 // Cookie Secure (Auto-detect)
 // $wgCookieSecure = 'detect'; // MW default is usually fine
+
+// Footer Badge - Powered by Labki
+$wgFooterIcons['poweredby']['labki'] = [
+    'src' => "$wgResourceBasePath/resources/assets/labki-badge.png",
+    'url' => 'https://labki.org',
+    'alt' => 'Powered by Labki',
+    'height' => '31',
+    'width' => '88',
+];

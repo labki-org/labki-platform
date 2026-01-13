@@ -43,8 +43,11 @@ COPY mediawiki/ /opt/labki/mediawiki/
 COPY scripts/ /opt/labki/scripts/
 COPY docker/entrypoint.sh /entrypoint.sh
 
+# 4. Copy Platform Assets (badge, logos, etc.)
+COPY resources/assets/ /var/www/html/resources/assets/
+
 # Ensure permissions
-RUN chown -R www-data:www-data /var/www/html/extensions /var/www/html/skins /var/www/html/vendor /opt/labki \
+RUN chown -R www-data:www-data /var/www/html/extensions /var/www/html/skins /var/www/html/vendor /var/www/html/resources/assets /opt/labki \
     && chmod +x /entrypoint.sh /opt/labki/scripts/*.sh
 
 ENV APACHE_DOCUMENT_ROOT=/var/www/html
