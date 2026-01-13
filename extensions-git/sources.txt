@@ -2,4 +2,5 @@
 MsUpload https://github.com/wikimedia/mediawiki-extensions-MsUpload.git REL1_44 extension
 PageSchemas https://gerrit.wikimedia.org/r/mediawiki/extensions/PageSchemas.git REL1_44 extension
 Lockdown https://gerrit.wikimedia.org/r/mediawiki/extensions/Lockdown.git REL1_44 extension
+WikiForum https://gerrit.wikimedia.org/r/mediawiki/extensions/WikiForum.git REL1_44 extension
 Citizen https://github.com/StarCitizenTools/mediawiki-skins-Citizen.git v3.6.0 skin

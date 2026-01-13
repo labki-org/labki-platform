@@ -29,6 +29,10 @@ wfLoadExtension('MsUpload');
 wfLoadExtension('PageSchemas');
 wfLoadExtension('Lockdown');
 
+// WikiForum
+wfLoadExtension('WikiForum');
+$wgWikiForumAllowAnonymous = false;
+
 // Skins
 wfLoadSkin('Citizen');
 wfLoadSkin('chameleon');
