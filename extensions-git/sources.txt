@@ -5,5 +5,4 @@ Lockdown https://gerrit.wikimedia.org/r/mediawiki/extensions/Lockdown.git REL1_4
 WikiForum https://gerrit.wikimedia.org/r/mediawiki/extensions/WikiForum.git master extension
 AccessControl https://gerrit.wikimedia.org/r/mediawiki/extensions/AccessControl.git REL1_44 extension
 ConfirmAccount https://gerrit.wikimedia.org/r/mediawiki/extensions/ConfirmAccount.git REL1_44 extension
-ConfirmEdit https://gerrit.wikimedia.org/r/mediawiki/extensions/ConfirmEdit.git REL1_44 extension
 Citizen https://github.com/StarCitizenTools/mediawiki-skins-Citizen.git v3.6.0 skin

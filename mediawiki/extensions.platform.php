@@ -39,9 +39,9 @@ wfLoadExtension( 'VisualEditor' );
 $wgDefaultUserOptions['visualeditor-editor'] = "visualeditor";
 wfLoadExtension( 'DiscussionTools' );
 
-// ConfirmEdit - requires a captcha module
+// ConfirmEdit - spam prevention via captcha
 wfLoadExtension( 'ConfirmEdit' );
-wfLoadExtension( 'ConfirmEdit/SimpleCaptcha' );
+$wgCaptchaClass = 'SimpleCaptcha';  // Use simple math captcha (bundled with ConfirmEdit)
 $wgGroupPermissions['*']['edit'] = false;
 
 // WikiForum
