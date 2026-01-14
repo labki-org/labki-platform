@@ -31,9 +31,14 @@ wfLoadExtension('Lockdown');
 
 wfLoadExtension( 'DiscussionTools' );
 
+wfLoadExtension( 'ConfirmEdit' );
+$wgGroupPermissions['*']['edit'] = false;
+
 // WikiForum
 wfLoadExtension('WikiForum');
 $wgWikiForumAllowAnonymous = false;
+$wgCaptchaTriggers['wikiforum'] = false;
+
 
 wfLoadExtension('AccessControl');
 $wgGroupPermissions['*']['read']            = true;
@@ -46,9 +51,6 @@ $wgGroupPermissions['*']['createtalk']      = false;
 wfLoadExtension( 'ConfirmAccount' );
 $wgGroupPermissions['*']['createaccount'] = false; // REQUIRED to enforce account requests via this extension
 $wgGroupPermissions['bureaucrat']['createaccount'] = true; // optional to allow account creation by this trusted user group
-
-wfLoadExtension( 'ConfirmEdit' );
-$wgGroupPermissions['*']['edit'] = false;
 
 // Skins
 wfLoadSkin('Citizen');
