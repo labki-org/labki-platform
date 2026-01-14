@@ -29,9 +29,19 @@ wfLoadExtension('MsUpload');
 wfLoadExtension('PageSchemas');
 wfLoadExtension('Lockdown');
 
+// Bundled MediaWiki extensions (shipped with MW 1.44)
+// These are dependencies for DiscussionTools
+wfLoadExtension( 'Echo' );
+wfLoadExtension( 'Linter' );
+wfLoadExtension( 'VisualEditor' );
+// Optional: Set VisualEditor as the default editor for logged-out users
+// otherwise they will have to switch to VE
+$wgDefaultUserOptions['visualeditor-editor'] = "visualeditor";
 wfLoadExtension( 'DiscussionTools' );
 
+// ConfirmEdit - requires a captcha module
 wfLoadExtension( 'ConfirmEdit' );
+wfLoadExtension( 'ConfirmEdit/SimpleCaptcha' );
 $wgGroupPermissions['*']['edit'] = false;
 
 // WikiForum
