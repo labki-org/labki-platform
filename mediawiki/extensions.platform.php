@@ -29,9 +29,26 @@ wfLoadExtension('MsUpload');
 wfLoadExtension('PageSchemas');
 wfLoadExtension('Lockdown');
 
+wfLoadExtension( 'DiscussionTools' );
+
 // WikiForum
 wfLoadExtension('WikiForum');
 $wgWikiForumAllowAnonymous = false;
+
+wfLoadExtension('AccessControl');
+$wgGroupPermissions['*']['read']            = true;
+$wgGroupPermissions['*']['createaccount']   = false;
+$wgGroupPermissions['*']['edit']            = false;
+$wgGroupPermissions['*']['writeapi']        = false;
+$wgGroupPermissions['*']['createpage']      = false;
+$wgGroupPermissions['*']['createtalk']      = false;
+
+wfLoadExtension( 'ConfirmAccount' );
+$wgGroupPermissions['*']['createaccount'] = false; // REQUIRED to enforce account requests via this extension
+$wgGroupPermissions['bureaucrat']['createaccount'] = true; // optional to allow account creation by this trusted user group
+
+wfLoadExtension( 'ConfirmEdit' );
+$wgGroupPermissions['*']['edit'] = false;
 
 // Skins
 wfLoadSkin('Citizen');

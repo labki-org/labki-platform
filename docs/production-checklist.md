@@ -12,9 +12,11 @@ Use this checklist when deploying Labki to production.
 - [ ] Ensure `$wgShowExceptionDetails = false` (default)
 
 ### Network
-- [ ] Configure reverse proxy (nginx/Traefik) for HTTPS termination
-- [ ] Set up TLS/SSL certificates (Let's Encrypt recommended)
+- [ ] Configure reverse proxy for HTTPS termination (Caddy recommended - see `docker-compose.caddy.yml`)
+- [ ] Set `SITE_DOMAIN` in `.env` to your domain
+- [ ] TLS/SSL certificates (automatic with Caddy + Let's Encrypt)
 - [ ] Configure firewall to only expose ports 80/443
+- [ ] Verify DNS A record points to server IP
 
 ### Database
 - [ ] **External DB recommended** for production (AWS RDS, Cloud SQL, etc.)
