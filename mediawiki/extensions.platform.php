@@ -49,8 +49,6 @@ wfLoadExtension('WikiForum');
 $wgWikiForumAllowAnonymous = false;
 $wgCaptchaTriggers['wikiforum'] = false;
 
-
-wfLoadExtension('AccessControl');
 $wgGroupPermissions['*']['read']            = true;
 $wgGroupPermissions['*']['createaccount']   = false;
 $wgGroupPermissions['*']['edit']            = false;
