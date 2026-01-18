@@ -26,7 +26,7 @@ wfLoadExtension('Bootstrap');
 
 // Labki Extensions (Git Cloned into extensions/)
 wfLoadExtension('MsUpload');
-wfLoadExtension('PageSchemas');
+// wfLoadExtension('PageSchemas'); We don't want PageSchemas as we generally will be using SemanticSchemas
 wfLoadExtension('Lockdown');
 
 // Bundled MediaWiki extensions (shipped with MW 1.44)
