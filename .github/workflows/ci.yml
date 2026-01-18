@@ -27,14 +27,17 @@ jobs:
   smoke-test:
     needs: lint
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [prod, dev]
     steps:
       - uses: actions/checkout@v6
 
       - name: Make scripts executable
         run: chmod +x ci/smoke-test.sh scripts/*.sh docker/entrypoint.sh
 
-      - name: Run Smoke Test
-        run: ./ci/smoke-test.sh
+      - name: Run Smoke Test (${{ matrix.target }})
+        run: ./ci/smoke-test.sh ${{ matrix.target }}
 
   security-scan:
     needs: smoke-test
@@ -42,8 +45,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Build image for scanning
-        run: docker build -t labki-scan:ci -f docker/Dockerfile .
+      - name: Build prod image for scanning
+        run: docker build -t labki-scan:ci -f docker/Dockerfile --target prod .
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master

@@ -17,6 +17,14 @@ jobs:
       contents: read
       packages: write # Required/Critical to push to GHCR
 
+    strategy:
+      matrix:
+        include:
+          - target: prod
+            suffix: ""
+          - target: dev
+            suffix: "-dev"
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -33,13 +41,15 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          flavor: |
+            suffix=${{ matrix.suffix }}
           tags: |
-            # Tag with branch name (e.g. main)
+            # Tag with branch name (e.g. main, main-dev)
             type=ref,event=branch
-            # Tag with semver (e.g. 1.0.0, 1.0) if a git tag is pushed
+            # Tag with semver (e.g. 1.0.0, 1.0.0-dev) if a git tag is pushed
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            # Update 'latest' tag on both main branch and tags
+            # Update 'latest' / 'latest-dev' tag on both main branch and tags
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') }}
 
       - name: Build and push Docker image
@@ -47,6 +57,7 @@ jobs:
         with:
           context: .
           file: docker/Dockerfile
+          target: ${{ matrix.target }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

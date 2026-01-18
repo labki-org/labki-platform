@@ -14,6 +14,7 @@ services:
     build:
       context: ../
       dockerfile: docker/Dockerfile
+      target: ${DOCKER_TARGET:-prod}
     restart: unless-stopped
     ports:
       - "8080:80"
@@ -49,6 +50,7 @@ services:
     build:
       context: ../
       dockerfile: docker/Dockerfile
+      target: ${DOCKER_TARGET:-prod}
     restart: unless-stopped
     environment:
       MW_DB_HOST: db

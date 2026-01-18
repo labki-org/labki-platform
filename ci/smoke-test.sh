@@ -6,12 +6,17 @@ set -euo pipefail
 # 2. Starts the stack
 # 3. Waits for success
 # 4. Cleans up
+#
+# Usage: ./smoke-test.sh [target]
+#   target: 'prod' (default) or 'dev'
+
+export DOCKER_TARGET="${1:-prod}"
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 REPO_ROOT=$(dirname "$SCRIPT_DIR")
 COMPOSE_FILE="$REPO_ROOT/compose/docker-compose.dev.yml"
 
-echo "[smoke-test] Building image..."
+echo "[smoke-test] Building image (target: $DOCKER_TARGET)..."
 docker compose -f "$COMPOSE_FILE" build
 
 echo "[smoke-test] Starting stack..."
