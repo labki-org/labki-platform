@@ -5,4 +5,5 @@ Lockdown https://gerrit.wikimedia.org/r/mediawiki/extensions/Lockdown.git REL1_4
 WikiForum https://gerrit.wikimedia.org/r/mediawiki/extensions/WikiForum.git master extension
 ConfirmAccount https://gerrit.wikimedia.org/r/mediawiki/extensions/ConfirmAccount.git REL1_44 extension
 MWAssistant https://github.com/labki-org/MWAssistant.git main extension
+SemanticSchemas https://github.com/labki-org/SemanticSchemas.git main extension
 Citizen https://github.com/StarCitizenTools/mediawiki-skins-Citizen.git v3.6.0 skin
