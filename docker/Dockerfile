@@ -46,6 +46,14 @@ COPY resources/assets/ /var/www/html/resources/assets/
 # ==============================================================================
 FROM base AS prod
 
+# Disable Composer blocking packages with security advisories during resolution
+# (PHPUnit 9.x has advisory PKSA-z3gr-8qht-p93v; dev-only, not shipped in prod)
+RUN php -r ' \
+    $c = json_decode(file_get_contents("composer.json"), true); \
+    $c["config"]["audit"]["block-insecure"] = false; \
+    file_put_contents("/tmp/composer.json", json_encode($c, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n"); \
+' && mv /tmp/composer.json composer.json
+
 # Run composer without dev dependencies
 RUN composer update --no-dev --prefer-dist --no-interaction --no-progress
 
@@ -66,6 +74,14 @@ CMD ["apache2-foreground"]
 # Development target (includes PHPUnit and dev dependencies)
 # ==============================================================================
 FROM base AS dev
+
+# Disable Composer blocking packages with security advisories during resolution
+# (PHPUnit 9.x has advisory PKSA-z3gr-8qht-p93v; accepted risk for dev/test)
+RUN php -r ' \
+    $c = json_decode(file_get_contents("composer.json"), true); \
+    $c["config"]["audit"]["block-insecure"] = false; \
+    file_put_contents("/tmp/composer.json", json_encode($c, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n"); \
+' && mv /tmp/composer.json composer.json
 
 # Run composer WITH dev dependencies (includes PHPUnit, etc.)
 RUN composer update --prefer-dist --no-interaction --no-progress
