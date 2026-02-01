@@ -1,6 +1,5 @@
 # Format: <ExtensionName> <GitURL> <GitRef> <Type:extension|skin>
 MsUpload https://github.com/wikimedia/mediawiki-extensions-MsUpload.git REL1_44 extension
-PageSchemas https://gerrit.wikimedia.org/r/mediawiki/extensions/PageSchemas.git REL1_44 extension
 Lockdown https://gerrit.wikimedia.org/r/mediawiki/extensions/Lockdown.git REL1_44 extension
 WikiForum https://gerrit.wikimedia.org/r/mediawiki/extensions/WikiForum.git master extension
 ConfirmAccount https://gerrit.wikimedia.org/r/mediawiki/extensions/ConfirmAccount.git REL1_44 extension
