@@ -11,6 +11,7 @@ if (!defined('MEDIAWIKI')) {
 // Load SMW
 wfLoadExtension('SemanticMediaWiki');
 enableSemantics($wgServer); // Required to activate SMW
+$smwgShowFactbox = SMW_FACTBOX_NONEMPTY;
 
 // SMW Satellites
 wfLoadExtension('SemanticResultFormats');
