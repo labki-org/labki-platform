@@ -35,10 +35,15 @@ if [ -x "$(command -v a2enmod)" ]; then a2enmod rewrite; fi
     echo "RewriteRule ^/?wiki/(.*)$ index.php [L]"
 } > /var/www/html/.htaccess
 
-# 1. Wait for Database
+# 1. Ensure upload directory is writable by the web server
+# The images/ bind mount inherits host ownership, which may not match www-data.
+echo "[entrypoint] Fixing images directory permissions..."
+chown -R www-data:www-data /var/www/html/images 2>/dev/null || true
+
+# 2. Wait for Database
 /opt/labki/scripts/wait-for-db.sh
 
-# 2. Ensure LocalSettings.php exists
+# 3. Ensure LocalSettings.php exists
 # If it's missing (fresh volume or first run), we write the loader.
 if [ ! -f /var/www/html/LocalSettings.php ]; then
     echo "[entrypoint] Writing LocalSettings.php loader..."
@@ -50,7 +55,7 @@ require_once '/opt/labki/mediawiki/bootstrap.php';
 PHP
 fi
 
-# 3. Check if installed (Are tables present?)
+# 4. Check if installed (Are tables present?)
 # We use a simple query to check for the 'user' table (or 'page' or 'site_stats').
 DB_HOST="${MW_DB_HOST:-db}"
 DB_USER="${MW_DB_USER:-labki}"
@@ -69,12 +74,12 @@ else
     echo "[entrypoint] MediaWiki tables found."
 fi
 
-# 4. Run Updates
+# 5. Run Updates
 # This ensures schema changes are applied on upgrade.
 # We skip this if we just installed, but running it is harmless idempotent.
 echo "[entrypoint] Running database updates..."
 php /var/www/html/maintenance/update.php --quick
 
-# 5. Start CMD
+# 6. Start CMD
 echo "[entrypoint] Starting process: $@"
 exec "$@"
