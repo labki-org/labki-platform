@@ -4,51 +4,46 @@ if (!defined('MEDIAWIKI')) {
     exit;
 }
 
-// Semantic MediaWiki Ecosystem
-// Note: Installed via Composer into vendor/ directory.
-// We still need to call enableSemantics/wfLoadExtension to activate them in MW registry.
+// --- Semantic MediaWiki Ecosystem (Composer-installed) ---
 
-// Load SMW
 wfLoadExtension('SemanticMediaWiki');
-enableSemantics($wgServer); // Required to activate SMW
+enableSemantics($wgServer);
 $smwgShowFactbox = SMW_FACTBOX_NONEMPTY;
 
-// SMW Satellites
 wfLoadExtension('SemanticResultFormats');
-// SemanticCompoundQueries might be autoloaded by SMW or Composer, but explicit load is safe if in vendor
 wfLoadExtension('SemanticCompoundQueries');
 wfLoadExtension('SemanticExtraSpecialProperties');
 
-// Core/Utility Extensions
+// --- Core/Utility Extensions (Composer-installed) ---
+
 wfLoadExtension('PageForms');
 wfLoadExtension('Maps');
 wfLoadExtension('Mermaid');
 wfLoadExtension('Bootstrap');
 
-// Labki Extensions (Git Cloned into extensions/)
+// --- Git-cloned Extensions ---
+
 wfLoadExtension('MsUpload');
-// wfLoadExtension('PageSchemas'); We don't want PageSchemas as we generally will be using SemanticSchemas
 wfLoadExtension('Lockdown');
 
-// Bundled MediaWiki extensions (shipped with MW 1.44)
-// These are dependencies for DiscussionTools
-wfLoadExtension( 'Echo' );
-wfLoadExtension( 'Linter' );
-wfLoadExtension( 'VisualEditor' );
-// Optional: Set VisualEditor as the default editor for logged-out users
-// otherwise they will have to switch to VE
+// --- Bundled MediaWiki Extensions (shipped with MW 1.44) ---
+
+wfLoadExtension('Echo');
+wfLoadExtension('Linter');
+wfLoadExtension('VisualEditor');
 $wgDefaultUserOptions['visualeditor-editor'] = "visualeditor";
-wfLoadExtension( 'DiscussionTools' );
+wfLoadExtension('DiscussionTools');
 
-// ConfirmEdit - spam prevention via captcha
-wfLoadExtension( 'ConfirmEdit' );
-$wgCaptchaClass = 'SimpleCaptcha';  // Use simple math captcha (bundled with ConfirmEdit)
-$wgGroupPermissions['*']['edit'] = false;
+wfLoadExtension('ConfirmEdit');
+$wgCaptchaClass = 'SimpleCaptcha';
 
-// WikiForum
 wfLoadExtension('WikiForum');
 $wgWikiForumAllowAnonymous = false;
 $wgCaptchaTriggers['wikiforum'] = false;
+
+wfLoadExtension('ConfirmAccount');
+
+// --- Permissions ---
 
 $wgGroupPermissions['*']['read']            = true;
 $wgGroupPermissions['*']['createaccount']   = false;
@@ -57,11 +52,10 @@ $wgGroupPermissions['*']['writeapi']        = false;
 $wgGroupPermissions['*']['createpage']      = false;
 $wgGroupPermissions['*']['createtalk']      = false;
 
-wfLoadExtension( 'ConfirmAccount' );
-$wgGroupPermissions['*']['createaccount'] = false; // REQUIRED to enforce account requests via this extension
-$wgGroupPermissions['bureaucrat']['createaccount'] = true; // optional to allow account creation by this trusted user group
+$wgGroupPermissions['bureaucrat']['createaccount'] = true;
 
-// Skins
+// --- Skins ---
+
 wfLoadSkin('Citizen');
 wfLoadSkin('chameleon');
 $wgDefaultSkin = 'citizen';

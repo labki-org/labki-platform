@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
-SOURCES_FILE=$1
+SOURCES_FILE="${1:-}"
 
 if [ -z "$SOURCES_FILE" ]; then
     echo "Usage: $0 <sources.txt>"
@@ -10,18 +10,15 @@ fi
 
 echo "Reading extensions from $SOURCES_FILE..."
 
-# Read the file line by line, skipping comments and empty lines
-while read -r name url ref type; do
-    # Skip comments
-    [[ "$name" =~ ^#.*$ ]] && continue
-    # Remove carriage returns from variables to handle DOS line endings
-    name=$(echo "$name" | tr -d '\r')
-    url=$(echo "$url" | tr -d '\r')
-    ref=$(echo "$ref" | tr -d '\r')
-    type=$(echo "$type" | tr -d '\r')
-    
-    # Skip empty lines
-    [ -z "$name" ] && continue
+while IFS=$'\t ' read -r name url ref type; do
+    # Strip DOS carriage returns
+    name="${name//$'\r'/}"
+    url="${url//$'\r'/}"
+    ref="${ref//$'\r'/}"
+    type="${type//$'\r'/}"
+
+    # Skip comments and empty lines
+    [[ -z "$name" || "$name" == \#* ]] && continue
 
     if [ "$type" == "skin" ]; then
         target_dir="/var/www/html/skins/$name"

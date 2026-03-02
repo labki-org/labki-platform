@@ -7,21 +7,16 @@ if [ "${DEBUG_ENTRYPOINT:-}" == "1" ]; then
     exec tail -f /dev/null
 fi
 
-# Load secrets if present (for runtime mounting mechanism)
+# Load secrets if present
 if [ -f /mw-config/secrets.env ]; then
   echo "[entrypoint] Loading secrets from /mw-config/secrets.env"
-  # Export variables from the file
   set -a
   source /mw-config/secrets.env
   set +a
 fi
 
-# Handle Short URLs
-# We use root-based install, so we just need rewrites for /wiki
-SCRIPT_PATH="${MW_SCRIPT_PATH:-}" # Default to empty (root)
-
+# Configure Short URL rewrites
 echo "[entrypoint] Configuring Apache Rewrites"
-# Ensure mod_rewrite is enabled
 if [ -x "$(command -v a2enmod)" ]; then a2enmod rewrite; fi
 
 {
@@ -29,22 +24,18 @@ if [ -x "$(command -v a2enmod)" ]; then a2enmod rewrite; fi
     echo "RewriteEngine On"
     echo "RewriteBase /"
     echo "Options +FollowSymLinks"
-    
-    # Short URL Rules
     echo "RewriteRule ^/?wiki$ index.php [L]"
     echo "RewriteRule ^/?wiki/(.*)$ index.php [L]"
 } > /var/www/html/.htaccess
 
-# 1. Ensure upload directory is writable by the web server
-# The images/ bind mount inherits host ownership, which may not match www-data.
+# Ensure upload directory is writable by the web server
 echo "[entrypoint] Fixing images directory permissions..."
 chown -R www-data:www-data /var/www/html/images 2>/dev/null || true
 
-# 2. Wait for Database
+# Wait for Database
 /opt/labki/scripts/wait-for-db.sh
 
-# 3. Ensure LocalSettings.php exists
-# If it's missing (fresh volume or first run), we write the loader.
+# Ensure LocalSettings.php loader exists
 if [ ! -f /var/www/html/LocalSettings.php ]; then
     echo "[entrypoint] Writing LocalSettings.php loader..."
     cat > /var/www/html/LocalSettings.php <<'PHP'
@@ -55,8 +46,7 @@ require_once '/opt/labki/mediawiki/bootstrap.php';
 PHP
 fi
 
-# 4. Check if installed (Are tables present?)
-# We use a simple query to check for the 'user' table (or 'page' or 'site_stats').
+# Check if MediaWiki tables exist in the database
 DB_HOST="${MW_DB_HOST:-db}"
 DB_USER="${MW_DB_USER:-labki}"
 DB_PASS="${MW_DB_PASSWORD:-labki_pass}"
@@ -74,12 +64,10 @@ else
     echo "[entrypoint] MediaWiki tables found."
 fi
 
-# 5. Run Updates
-# This ensures schema changes are applied on upgrade.
-# We skip this if we just installed, but running it is harmless idempotent.
+# Run schema updates (idempotent)
 echo "[entrypoint] Running database updates..."
 php /var/www/html/maintenance/update.php --quick
 
-# 6. Start CMD
+# Start CMD
 echo "[entrypoint] Starting process: $@"
 exec "$@"

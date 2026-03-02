@@ -15,21 +15,15 @@ date_default_timezone_set($wgLocaltimezone);
 // Memory Limit (Generous for SMW)
 ini_set('memory_limit', '512M');
 
-// Logging (StdErr for Docker)
+// Logging (stderr for Docker log collection)
 $wgDebugLogFile = "php://stderr";
 
-// Display Errors (Off in prod/default, helpful to know it's controlled here)
+// Display Errors
 ini_set('display_errors', 0);
 $wgShowExceptionDetails = false;
 
-// Job Queue - Force to background runner (avoids UI lag)
+// Job Queue - defer to background runner (avoids UI lag)
 $wgJobRunRate = 0;
-
-// Uploads - Enabled by default
-$wgEnableUploads = true;
-
-// Cookie Secure (Auto-detect)
-// $wgCookieSecure = 'detect'; // MW default is usually fine
 
 // Footer Badge - Powered by Labki
 $wgFooterIcons['poweredby']['labki'] = [

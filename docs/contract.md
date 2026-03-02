@@ -53,7 +53,7 @@ The following environment variables constitute the public API for configuring th
 | `MW_SITE_NAME` | `Labki` | Name of the Wiki. |
 | `MW_SITE_LANG` | `en` | Language code. |
 | `MW_SERVER` | `http://localhost:8080` | Server URL. |
-| `MW_SCRIPT_PATH` | `/w` | Script path. |
+| `MW_SCRIPT_PATH` | `""` (empty) | Script path. |
 | `MW_ADMIN_USER` | `admin` | Initial admin username. |
 | `MW_ADMIN_PASS` | (Required) | Initial admin password. |
 
