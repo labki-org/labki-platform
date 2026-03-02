@@ -58,4 +58,5 @@ $wgGroupPermissions['bureaucrat']['createaccount'] = true;
 
 wfLoadSkin('Citizen');
 wfLoadSkin('chameleon');
-$wgDefaultSkin = 'citizen';
+wfLoadSkin('Tweeki');
+$wgDefaultSkin = 'tweeki';
