@@ -1,10 +1,12 @@
 ARG MEDIAWIKI_VERSION=1.44
 FROM mediawiki:${MEDIAWIKI_VERSION} AS base
+ARG MEDIAWIKI_VERSION
 
 LABEL org.opencontainers.image.title="Labki Platform"
 LABEL org.opencontainers.image.description="Pre-configured MediaWiki distribution with Semantic MediaWiki and curated extensions"
 LABEL org.opencontainers.image.source="https://github.com/labki-org/labki-platform"
 LABEL org.opencontainers.image.vendor="Labki"
+LABEL org.opencontainers.image.version.mediawiki="${MEDIAWIKI_VERSION}"
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 WORKDIR /var/www/html
