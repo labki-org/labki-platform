@@ -43,9 +43,11 @@ $wgCaptchaTriggers['wikiforum'] = false;
 
 wfLoadExtension('ConfirmAccount');
 
-// --- Permissions ---
+// --- Permissions (private wiki by default) ---
+// To make your wiki public, add $wgGroupPermissions['*']['read'] = true;
+// to your LocalSettings.user.php
 
-$wgGroupPermissions['*']['read']            = true;
+$wgGroupPermissions['*']['read']            = false;
 $wgGroupPermissions['*']['createaccount']   = false;
 $wgGroupPermissions['*']['edit']            = false;
 $wgGroupPermissions['*']['writeapi']        = false;
@@ -53,6 +55,14 @@ $wgGroupPermissions['*']['createpage']      = false;
 $wgGroupPermissions['*']['createtalk']      = false;
 
 $wgGroupPermissions['bureaucrat']['createaccount'] = true;
+
+$wgWhitelistRead = [
+    'Special:UserLogin',
+    'Special:CreateAccount',
+    'Special:RequestAccount',
+    'Special:PasswordReset',
+    'Main Page',
+];
 
 // --- Skins ---
 
