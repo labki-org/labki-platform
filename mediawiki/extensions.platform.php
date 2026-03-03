@@ -84,7 +84,7 @@ $wgTweekiSkinCustomCSS[] = 'skin.labki.tweeki.styles';
 // Register and load custom JS (notification badges, etc.)
 $wgResourceModules['skin.labki.tweeki.scripts'] = [
     'scripts' => [ 'resources/scripts/labki-tweeki.js' ],
-    'dependencies' => [ 'mediawiki.api' ],
+    'dependencies' => [ 'mediawiki.api', 'skins.tweeki.scripts' ],
     'localBasePath' => $IP,
     'remoteBasePath' => $wgResourceBasePath,
 ];
