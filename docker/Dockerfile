@@ -49,7 +49,7 @@ FROM base AS prod
 
 RUN composer update --no-dev --prefer-dist --no-interaction --no-progress
 
-RUN chown -R www-data:www-data /var/www/html/extensions /var/www/html/skins /var/www/html/vendor /var/www/html/resources/assets /var/www/html/resources/styles /var/www/html/resources/scripts /opt/labki \
+RUN chown -R www-data:www-data /var/www/html/extensions /var/www/html/skins /var/www/html/vendor /var/www/html/resources /opt/labki \
     && chmod +x /entrypoint.sh /opt/labki/scripts/*.sh
 
 ENV APACHE_DOCUMENT_ROOT=/var/www/html
@@ -67,7 +67,7 @@ FROM base AS dev
 
 RUN composer update --prefer-dist --no-interaction --no-progress
 
-RUN chown -R www-data:www-data /var/www/html/extensions /var/www/html/skins /var/www/html/vendor /var/www/html/resources/assets /var/www/html/resources/styles /var/www/html/resources/scripts /opt/labki \
+RUN chown -R www-data:www-data /var/www/html/extensions /var/www/html/skins /var/www/html/vendor /var/www/html/resources /opt/labki \
     && chmod +x /entrypoint.sh /opt/labki/scripts/*.sh
 
 ENV APACHE_DOCUMENT_ROOT=/var/www/html

@@ -2,67 +2,37 @@
  * Labki Tweeki Scripts
  *
  * Adds notification badge counts for Echo alerts/notices.
- * Only loaded when Tweeki is the active skin.
+ * Only loaded when Tweeki is the active skin (via $wgTweekiSkinCustomScriptModule).
  */
 ( function () {
 	'use strict';
 
-	var api = new mw.Api();
-
 	function updateNotificationBadges() {
-		api.get( {
-			action: 'query',
-			meta: 'notifications',
-			notprop: 'count',
-			notsections: 'alert|message',
-			notgroupbythrottlegroup: 1
-		} ).then( function ( data ) {
-			var notif = data.query && data.query.notifications;
-			if ( !notif ) {
-				return;
-			}
+		var api = new mw.Api();
 
-			var alertCount = notif.rawcount || 0;
-			var noticeCount = notif[ 'message' ] ? notif[ 'message' ].rawcount || 0 : 0;
-
-			// Parse counts from the sections if available
-			if ( notif.list ) {
-				// Fallback: use total count split isn't available
-				alertCount = 0;
-				noticeCount = 0;
-			}
-
-			// Try section-based counts
-			if ( typeof notif.rawcount !== 'undefined' ) {
-				// Single combined count - we'll query sections separately
-				updateSectionCounts();
-				return;
-			}
+		Promise.all( [
+			api.get( {
+				action: 'query',
+				meta: 'notifications',
+				notprop: 'count',
+				notsections: 'alert'
+			} ),
+			api.get( {
+				action: 'query',
+				meta: 'notifications',
+				notprop: 'count',
+				notsections: 'message'
+			} )
+		] ).then( function ( results ) {
+			var alertCount = results[ 0 ].query &&
+				results[ 0 ].query.notifications &&
+				results[ 0 ].query.notifications.rawcount || 0;
+			var noticeCount = results[ 1 ].query &&
+				results[ 1 ].query.notifications &&
+				results[ 1 ].query.notifications.rawcount || 0;
 
 			setBadge( 'pt-notifications-alert', alertCount );
 			setBadge( 'pt-notifications-notice', noticeCount );
-		} );
-	}
-
-	function updateSectionCounts() {
-		api.get( {
-			action: 'query',
-			meta: 'notifications',
-			notprop: 'count',
-			notsections: 'alert'
-		} ).then( function ( data ) {
-			var count = data.query && data.query.notifications && data.query.notifications.rawcount || 0;
-			setBadge( 'pt-notifications-alert', count );
-		} );
-
-		api.get( {
-			action: 'query',
-			meta: 'notifications',
-			notprop: 'count',
-			notsections: 'message'
-		} ).then( function ( data ) {
-			var count = data.query && data.query.notifications && data.query.notifications.rawcount || 0;
-			setBadge( 'pt-notifications-notice', count );
 		} );
 	}
 
@@ -72,7 +42,6 @@
 			return;
 		}
 
-		// Remove existing badge
 		var existing = el.querySelector( '.labki-notif-badge' );
 		if ( existing ) {
 			existing.remove();
@@ -89,9 +58,8 @@
 		}
 	}
 
-	// Run on page load if user is logged in
-	if ( mw.config.get( 'wgUserName' ) ) {
-		mw.loader.using( 'mediawiki.api' ).then( updateNotificationBadges );
+	if ( !mw.user.isAnon() ) {
+		updateNotificationBadges();
 	}
 
 }() );

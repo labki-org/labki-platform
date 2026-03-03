@@ -18,6 +18,8 @@
 	--labki-bg-subtle:     #f4f6f8;
 	--labki-border:        #d8dde3;
 	--labki-heading:       #1a3a5c;
+	--labki-warning:       var(--labki-warning);
+	--labki-danger:        #d9534f;
 }
 
 /* === Navbar === */
@@ -93,13 +95,13 @@
 #pt-notifications-alert.labki-notif-unread,
 #pt-notifications-notice.labki-notif-unread {
 	background-color: var(--labki-primary);
-	border-left-color: #e8a435;
+	border-left-color: var(--labki-warning);
 	color: #fff;
 }
 
 #pt-notifications-alert.labki-notif-unread .fa,
 #pt-notifications-notice.labki-notif-unread .fa {
-	color: #e8a435;
+	color: var(--labki-warning);
 }
 
 #pt-notifications-alert.labki-notif-unread::after,
@@ -118,7 +120,7 @@
 	margin-left: 0.4em;
 	text-align: center;
 	color: #fff;
-	background-color: #d9534f;
+	background-color: var(--labki-danger);
 	border-radius: 0.75em;
 	vertical-align: middle;
 }
@@ -149,7 +151,8 @@
 
 #content a:not(.btn):hover,
 #content a:not(.btn):focus,
-#mw-panel a:hover {
+#mw-panel a:hover,
+#mw-panel a:focus {
 	color: var(--labki-accent-hover);
 }
 
@@ -173,13 +176,11 @@
 }
 
 /* === Buttons === */
-#content .btn-primary,
 .btn-primary {
 	background-color: var(--labki-primary);
 	border-color: var(--labki-primary);
 }
 
-#content .btn-primary:hover,
 .btn-primary:hover {
 	background-color: var(--labki-primary-light);
 	border-color: var(--labki-primary-light);
