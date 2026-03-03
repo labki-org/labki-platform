@@ -70,3 +70,52 @@ wfLoadSkin('Citizen');
 wfLoadSkin('chameleon');
 wfLoadSkin('Tweeki');
 $wgDefaultSkin = 'tweeki';
+
+// --- Labki Tweeki Defaults ---
+
+// Register and load custom CSS
+$wgResourceModules['skin.labki.tweeki.styles'] = [
+    'styles' => [ 'resources/styles/labki-tweeki.css' ],
+    'localBasePath' => $IP,
+    'remoteBasePath' => $wgResourceBasePath,
+];
+$wgTweekiSkinCustomCSS[] = 'skin.labki.tweeki.styles';
+
+// Register and load custom JS (notification badges, etc.)
+$wgResourceModules['skin.labki.tweeki.scripts'] = [
+    'scripts' => [ 'resources/scripts/labki-tweeki.js' ],
+    'dependencies' => [ 'mediawiki.api' ],
+    'localBasePath' => $IP,
+    'remoteBasePath' => $wgResourceBasePath,
+];
+$wgTweekiSkinCustomScriptModule = 'skin.labki.tweeki.scripts';
+
+// Full-width content when no sidebars are active
+$wgTweekiSkinGridNone = [
+    'mainoffset' => 0,
+    'mainwidth'  => 12,
+];
+
+// Disable footer icons (text links are cleaner; Labki badge still renders via $wgFooterIcons)
+$wgTweekiSkinFooterIcons = false;
+
+// Enable Bootstrap tooltips
+$wgTweekiSkinUseTooltips = true;
+
+// Hide UI clutter from anonymous users (private wiki context)
+$wgTweekiSkinHideAnon = [
+    'subnav'   => true,
+    'PERSONAL' => true,
+    'TOOLBOX'  => true,
+];
+
+// Hide footer metadata (MW version info) from everyone
+$wgTweekiSkinHideAll = [
+    'footer-info' => true,
+];
+
+// Show real names in user links (academic context)
+$wgTweekiSkinUseRealnames = true;
+
+// Use pencil icon for edit-section links
+$wgTweekiSkinCustomEditSectionLink = true;

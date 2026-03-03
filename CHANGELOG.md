@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Custom Tweeki skin theme with academic color palette and layout defaults
 - CONTRIBUTING.md with contributor guidelines
 - CHANGELOG.md for tracking releases
 - CI badges in README

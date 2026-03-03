@@ -60,3 +60,44 @@ if ( !defined( 'MEDIAWIKI' ) ) {
 // Uncomment to see errors on screen (NOT for production!)
 // $wgShowExceptionDetails = true;
 // $wgUploadMaintenance = true; // Use if you hit upload size limits in dev
+
+// ----------------------
+// 6. Skin (Tweeki) Customization
+// ----------------------
+
+// Labki ships a custom Tweeki theme (dark navbar, academic color palette).
+// Everything below can override those defaults.
+
+// A) Change the default skin entirely:
+// $wgDefaultSkin = 'citizen';
+
+// B) Override CSS colors via a custom ResourceLoader module.
+//    Create a CSS file in your user-extensions volume and register it:
+// $wgResourceModules['skin.mylab.styles'] = [
+//     'styles' => [ '/mw-user-extensions/my-theme.css' ],
+//     'localBasePath' => '/',
+//     'remoteBasePath' => '/',
+// ];
+// $wgTweekiSkinCustomCSS[] = 'skin.mylab.styles';
+
+// C) Adjust content grid width (default: full-width when no sidebar):
+// $wgTweekiSkinGridNone = [ 'mainoffset' => 1, 'mainwidth' => 10 ];
+
+// D) Show/hide UI elements for anonymous users:
+//    Set to empty array to show everything to anon visitors.
+// $wgTweekiSkinHideAnon = [];
+
+// E) Show footer metadata (MW version info, hidden by default):
+// $wgTweekiSkinHideAll = [];
+
+// F) Disable Labki's custom edit-section pencil icon:
+// $wgTweekiSkinCustomEditSectionLink = false;
+
+// G) Wiki-based customization (no PHP needed):
+//    Edit these special pages in the wiki to change navbar/footer/sidebar:
+//    - MediaWiki:Tweeki-navbar-brand  (site name / logo)
+//    - MediaWiki:Tweeki-navbar-left   (left navbar items)
+//    - MediaWiki:Tweeki-navbar-right  (right navbar items)
+//    - MediaWiki:Tweeki-sidebar       (sidebar content)
+//    - MediaWiki:Tweeki-footer        (footer content)
+//    - MediaWiki:Tweeki.css           (custom CSS, e.g. override --labki-* vars)
