@@ -32,6 +32,8 @@ COPY mediawiki/ /opt/labki/mediawiki/
 COPY scripts/ /opt/labki/scripts/
 COPY docker/entrypoint.sh /entrypoint.sh
 COPY resources/assets/ /var/www/html/resources/assets/
+COPY resources/styles/ /var/www/html/resources/styles/
+COPY resources/scripts/ /var/www/html/resources/scripts/
 
 # Disable Composer audit blocking (PHPUnit 9.x advisory PKSA-z3gr-8qht-p93v)
 RUN php -r ' \
@@ -47,7 +49,7 @@ FROM base AS prod
 
 RUN composer update --no-dev --prefer-dist --no-interaction --no-progress
 
-RUN chown -R www-data:www-data /var/www/html/extensions /var/www/html/skins /var/www/html/vendor /var/www/html/resources/assets /opt/labki \
+RUN chown -R www-data:www-data /var/www/html/extensions /var/www/html/skins /var/www/html/vendor /var/www/html/resources/assets /var/www/html/resources/styles /var/www/html/resources/scripts /opt/labki \
     && chmod +x /entrypoint.sh /opt/labki/scripts/*.sh
 
 ENV APACHE_DOCUMENT_ROOT=/var/www/html
@@ -65,7 +67,7 @@ FROM base AS dev
 
 RUN composer update --prefer-dist --no-interaction --no-progress
 
-RUN chown -R www-data:www-data /var/www/html/extensions /var/www/html/skins /var/www/html/vendor /var/www/html/resources/assets /opt/labki \
+RUN chown -R www-data:www-data /var/www/html/extensions /var/www/html/skins /var/www/html/vendor /var/www/html/resources/assets /var/www/html/resources/styles /var/www/html/resources/scripts /opt/labki \
     && chmod +x /entrypoint.sh /opt/labki/scripts/*.sh
 
 ENV APACHE_DOCUMENT_ROOT=/var/www/html
