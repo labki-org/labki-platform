@@ -43,6 +43,16 @@ $wgCaptchaTriggers['wikiforum'] = false;
 
 wfLoadExtension('ConfirmAccount');
 
+// Workaround: ConfirmAccount renders OOUI forms before the skin sets the theme.
+// Ensure the OOUI theme singleton is initialized early to prevent RuntimeException.
+$wgHooks['SetupAfterCache'][] = static function () {
+    try {
+        \OOUI\Theme::singleton();
+    } catch ( \RuntimeException $e ) {
+        \OOUI\Theme::setSingleton( new \OOUI\WikimediaUITheme() );
+    }
+};
+
 // --- Permissions (private wiki by default) ---
 // To make your wiki public, add $wgGroupPermissions['*']['read'] = true;
 // to your LocalSettings.user.php
