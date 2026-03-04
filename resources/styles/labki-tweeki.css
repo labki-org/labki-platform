@@ -125,6 +125,40 @@
 	vertical-align: middle;
 }
 
+/* === Anonymous Login Buttons === */
+/* Make Log in / Request Account stand out as buttons in the dark navbar */
+#pt-login-private > a,
+#pt-createaccount > a {
+	border-radius: 4px;
+	padding: 0.375rem 1rem !important;
+	margin-left: 0.5rem;
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+#pt-login-private > a {
+	border: 2px solid rgba(255, 255, 255, 0.7) !important;
+	color: #fff !important;
+}
+
+#pt-login-private > a:hover,
+#pt-login-private > a:focus {
+	background-color: rgba(255, 255, 255, 0.15);
+	border-color: #fff !important;
+}
+
+#pt-createaccount > a {
+	background-color: var(--labki-accent) !important;
+	border: 2px solid var(--labki-accent) !important;
+	color: #fff !important;
+}
+
+#pt-createaccount > a:hover,
+#pt-createaccount > a:focus {
+	background-color: var(--labki-accent-hover) !important;
+	border-color: var(--labki-accent-hover) !important;
+}
+
 /* === Headings === */
 #content h1,
 #content h2,
