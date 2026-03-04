@@ -134,7 +134,7 @@ $wgTweekiSkinNavigationalElements['LABKI-LOGIN'] = function ( $skin, $context ) 
             'id' => 'pt-login-private',
         ],
         [
-            'text' => 'Request Account',
+            'text' => wfMessage( 'requestaccount' )->text(),
             'href' => SpecialPage::getTitleFor( 'RequestAccount' )->getLocalURL(),
             'id' => 'pt-createaccount',
         ],
