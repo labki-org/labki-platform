@@ -109,6 +109,31 @@ $wgTweekiSkinHideAnon = [
     'TOOLBOX'  => true,
 ];
 
+// Custom navbar element: prominent "Log in" and "Request Account" buttons for anon users.
+// Tweeki's PERSONAL element has text-rendering bugs with login-private + createaccount,
+// so we bypass it with a clean custom element and hide PERSONAL for anon (above).
+$wgTweekiSkinNavigationalElements['LABKI-LOGIN'] = function ( $skin, $context ) {
+    if ( !$skin->getSkin()->getUser()->isAnon() ) {
+        return [];
+    }
+    $returnto = $skin->getSkin()->getTitle()->getPrefixedDBkey();
+    return [
+        [
+            'text' => wfMessage( 'login' )->text(),
+            'href' => SpecialPage::getTitleFor( 'Userlogin' )->getLocalURL( [ 'returnto' => $returnto ] ),
+            'id' => 'pt-login-private',
+        ],
+        [
+            'text' => 'Request Account',
+            'href' => SpecialPage::getTitleFor( 'RequestAccount' )->getLocalURL(),
+            'id' => 'pt-createaccount',
+        ],
+    ];
+};
+
+// Override navbar-right to include our login element before PERSONAL and search
+$wgTweekiSkinCustomNav['navbar-right'] = 'LABKI-LOGIN,PERSONAL,SEARCH';
+
 // Hide footer metadata (MW version info) from everyone
 $wgTweekiSkinHideAll = [
     'footer-info' => true,
