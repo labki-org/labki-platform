@@ -6,5 +6,6 @@ ConfirmAccount https://gerrit.wikimedia.org/r/mediawiki/extensions/ConfirmAccoun
 MWAssistant https://github.com/labki-org/MWAssistant.git main extension
 SemanticSchemas https://github.com/labki-org/SemanticSchemas.git main extension
 FilePermissions https://github.com/labki-org/FilePermissions.git main extension
+OntologySync https://github.com/labki-org/OntologySync.git main extension
 Citizen https://github.com/StarCitizenTools/mediawiki-skins-Citizen.git v3.6.0 skin
 Tweeki https://github.com/thaider/Tweeki.git master skin
