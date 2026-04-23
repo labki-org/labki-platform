@@ -16,6 +16,15 @@ RUN apt-get update && apt-get install -y \
     git unzip ca-certificates mariadb-client curl \
     && rm -rf /var/lib/apt/lists/*
 
+# Apache + PHP tuning for long-lived MediaWiki deployments.
+# MaxConnectionsPerChild bounds Apache worker lifetime so in-process PHP
+# state (SMW's in-memory caches in particular) can't accumulate stale
+# entries indefinitely. Opcache + APCu settings give a sensible baseline
+# for a single-VPS install serving up to ~1000 users/day.
+COPY docker/apache/labki-tuning.conf /etc/apache2/conf-available/labki-tuning.conf
+COPY docker/php/labki-tuning.ini /usr/local/etc/php/conf.d/zz-labki-tuning.ini
+RUN a2enconf labki-tuning
+
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
