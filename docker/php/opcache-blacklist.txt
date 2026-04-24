@@ -1,0 +1,12 @@
+# Labki Platform — opcache blacklist
+#
+# Files listed here are never cached by opcache, so edits take effect on
+# the next request instead of waiting for opcache.revalidate_freq. We
+# apply this to LocalSettings and the bootstrap loader because admins
+# routinely edit them for debugging and expect changes to be immediate.
+# Everything else (MediaWiki core, extensions, skins) stays cached.
+/var/www/html/LocalSettings.php
+/opt/labki/mediawiki/bootstrap.php
+/opt/labki/mediawiki/LocalSettings.base.php
+/opt/labki/mediawiki/LocalSettings.defaults.php
+/mw-config/LocalSettings.user.php
