@@ -17,12 +17,14 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Apache + PHP tuning for long-lived MediaWiki deployments.
-# MaxConnectionsPerChild bounds Apache worker lifetime so in-process PHP
-# state (SMW's in-memory caches in particular) can't accumulate stale
-# entries indefinitely. Opcache + APCu settings give a sensible baseline
-# for a single-VPS install serving up to ~1000 users/day.
+# Opcache + APCu settings give a sensible baseline for a single-VPS
+# install serving up to ~1000 users/day. Apache's MaxConnectionsPerChild
+# is set to a large value purely as defensive hygiene against long-tail
+# PHP memory leaks. LocalSettings files are opcache-blacklisted so admin
+# config edits take effect immediately.
 COPY docker/apache/labki-tuning.conf /etc/apache2/conf-available/labki-tuning.conf
 COPY docker/php/labki-tuning.ini /usr/local/etc/php/conf.d/zz-labki-tuning.ini
+COPY docker/php/opcache-blacklist.txt /usr/local/etc/php/opcache-blacklist.txt
 RUN a2enconf labki-tuning
 
 # Install Composer
