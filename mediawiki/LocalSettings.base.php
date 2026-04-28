@@ -24,9 +24,16 @@ $wgScriptPath = getenv('MW_SCRIPT_PATH') ?: "";
 $wgArticlePath = getenv('MW_ARTICLE_PATH') ?: "/wiki/$1";
 $wgServer = getenv('MW_SERVER') ?: "http://localhost:8080";
 
-// --- Object Cache (APCu) ---
-
-$wgMainCacheType = CACHE_ACCEL;
+// --- Object Cache ---
+//
+// CACHE_DB routes through the MediaWiki object cache table on the same
+// MariaDB instance. It's durable across worker restarts and consistent
+// between web workers and CLI maintenance scripts (runJobs, rebuildData).
+// CACHE_ACCEL (APCu) is faster per-op but splits state across SAPIs:
+// CLI maintenance scripts and Apache workers see different caches, which
+// produces hard-to-diagnose inconsistencies in MW + SMW workloads.
+// Revisit if/when Redis or Memcached is added to the deployment.
+$wgMainCacheType = CACHE_DB;
 $wgMemCachedServers = [];
 
 // --- Image Uploads ---
