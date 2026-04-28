@@ -32,20 +32,14 @@ $wgJobRunRate = 0;
 
 // Cache routing.
 //
-// $wgMainCacheType is set in LocalSettings.base.php to CACHE_ACCEL
-// (APCu). Route session and message caches to the same fast in-process
-// store. ParserCache entries can be multi-MB and benefit from
-// durability across worker restarts, so keep it on the database.
-$wgSessionCacheType = CACHE_ACCEL;
-$wgMessageCacheType = CACHE_ACCEL;
+// All caches route to CACHE_DB to match $wgMainCacheType (set in
+// LocalSettings.base.php). Being explicit protects against surprises if
+// a user override flips $wgMainCacheType to something a given subsystem
+// can't use. SMW caches are left at their defaults (CACHE_ANYTHING),
+// which resolves through $wgMainCacheType.
+$wgSessionCacheType = CACHE_DB;
+$wgMessageCacheType = CACHE_DB;
 $wgParserCacheType  = CACHE_DB;
-
-// SMW caches default to CACHE_ANYTHING which resolves through
-// $wgMainCacheType anyway, but making it explicit is helpful for ops
-// and protects against surprises if a user overrides $wgMainCacheType
-// to something SMW's CompositeCache can't use.
-$smwgMainCacheType = CACHE_ACCEL;
-$smwgQueryResultCacheType = CACHE_ACCEL;
 
 // Footer Badge - Powered by Labki
 $wgFooterIcons['poweredby']['labki'] = [
