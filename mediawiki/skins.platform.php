@@ -35,13 +35,13 @@ $wgResourceModules['skin.labki.tweeki.styles'] = [
 ];
 $wgTweekiSkinCustomCSS[] = 'skin.labki.tweeki.styles';
 
-// Register and load custom JS. Re-adds the `mw-echo-notification-badge-nojs`
-// class on the bell anchors that Tweeki's PERSONAL renderer strips, so
-// Echo's stock flyout init can bind. Depends on Tweeki's own scripts to
-// guarantee the navbar is rendered before our DOM patch runs.
+// Register and load custom JS. Polls the Echo notifications count and
+// decorates the user dropdown toggle with an unread badge so logged-in
+// users see at-a-glance whether they have notifications without opening
+// the dropdown.
 $wgResourceModules['skin.labki.tweeki.scripts'] = [
     'scripts' => [ 'resources/scripts/labki-tweeki.js' ],
-    'dependencies' => [ 'mediawiki.user', 'skins.tweeki.scripts' ],
+    'dependencies' => [ 'mediawiki.api', 'mediawiki.user', 'skins.tweeki.scripts' ],
     'localBasePath' => $IP,
     'remoteBasePath' => $wgResourceBasePath,
 ];
@@ -58,6 +58,22 @@ $wgTweekiSkinFooterIcons = false;
 
 // Enable Bootstrap tooltips
 $wgTweekiSkinUseTooltips = true;
+
+// Register message overrides for Tweeki's PERSONAL fallback path.
+// TweekiTemplate.php (case 'PERSONAL') checks the OUTER ptool for
+// `text`; if missing, it falls back to `wfMessage($key)->text()`.
+// MediaWiki's getPersonalToolsForMakeListItem hoists `text` into
+// `links[0]`, so the outer level Echo populates is bare by the time
+// Tweeki sees it. Defining `notifications-alert` and `notifications-
+// notice` messages gives Tweeki's fallback a real string to render
+// instead of the raw-key marker `⟨notifications-alert⟩`.
+$wgMessagesDirs['LabkiPlatform'] = __DIR__ . '/i18n';
+
+// Echo hands the Notices entry an OOUI icon name `tray` which Tweeki
+// blindly emits as `<span class="fa fa-tray">`. FontAwesome Free
+// doesn't ship a `fa-tray` glyph, so the span renders empty. We give
+// `fa-tray` the inbox glyph in resources/styles/labki-tweeki.css —
+// see the comment there.
 
 // Hide UI clutter from anonymous users (private wiki context)
 $wgTweekiSkinHideAnon = [

@@ -59,6 +59,45 @@
 	border: 1px solid var(--labki-border);
 }
 
+/* === FontAwesome glyph for Echo's "tray" icon === */
+/* Echo hands the Notices entry an OOUI icon name `tray`, which Tweeki
+   emits as `<span class="fa fa-tray">`. FontAwesome Free doesn't ship
+   a `.fa-tray::before` rule, so the span has no glyph. Map `fa-tray`
+   to FA's inbox codepoint so Notices gets a visible icon. Stays scoped
+   to the `.fa-tray` class — does not affect any other element. */
+.fa-tray::before {
+	content: "\f01c"; /* fa-inbox */
+	font-family: "Font Awesome 5 Free", "FontAwesome";
+	font-weight: 900;
+}
+
+/* === Unread Notification Badge on User Dropdown === */
+/* Echo's notifications-alert / notifications-notice items live inside
+   the PERSONAL dropdown under Tweeki. To surface unread state without
+   forcing users to open the menu, labki-tweeki.js injects a
+   .labki-notif-badge span on the dropdown toggle when unread > 0.
+   We avoid ::after here because Bootstrap reserves it for the
+   dropdown caret. */
+#mw-navigation .dropdown-toggle {
+	position: relative;
+}
+
+.labki-notif-badge {
+	display: inline-block;
+	min-width: 1.4em;
+	padding: 0.1em 0.4em;
+	margin-left: 0.3em;
+	background: var(--labki-danger);
+	color: #fff;
+	border-radius: 999px;
+	font-size: 0.65rem;
+	font-weight: 700;
+	line-height: 1.4;
+	text-align: center;
+	vertical-align: top;
+	border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
 /* === Anonymous Login Buttons === */
 /* Make Log in / Request Account stand out as buttons in the dark navbar */
 #pt-login-private > a,

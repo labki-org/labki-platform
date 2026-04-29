@@ -1,0 +1,7 @@
+{
+	"@metadata": {
+		"authors": []
+	},
+	"notifications-alert": "Label for the Echo \"Alerts\" entry inside Tweeki's personal-tools dropdown. Tweeki's PERSONAL renderer falls back to wfMessage($key) when the entry has no outer-level `text`, but core MediaWiki's getPersonalToolsForMakeListItem hoists `text` into `links[0]` — leaving the outer level bare. This message provides the fallback label so the dropdown reads \"Alerts\" instead of the raw key marker.",
+	"notifications-notice": "Label for the Echo \"Notices\" entry inside Tweeki's personal-tools dropdown. See notifications-alert for the full reasoning."
+}
