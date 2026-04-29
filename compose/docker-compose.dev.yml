@@ -36,9 +36,12 @@ services:
       - db
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:80/wiki/Main_Page" ]
-      interval: 30s
+      interval: 10s
       timeout: 10s
-      retries: 3
+      retries: 6
+      # Cover the install + update.php window on a fresh DB so the
+      # healthcheck doesn't mark the service unhealthy mid-install.
+      start_period: 90s
 
   wiki-jobrunner:
     build:
@@ -51,7 +54,13 @@ services:
       MW_DB_NAME: labki
       MW_DB_USER: labki
       MW_DB_PASSWORD: labki_pass
+    # Wait for the wiki container to finish install + update.php before
+    # this one's entrypoint runs. Otherwise both containers race on
+    # install.php and the jobrunner (which has no MW_ADMIN_PASS) trips
+    # MW's minimum-password length on its no-op install attempt.
     depends_on:
-      - db
-      - wiki
+      db:
+        condition: service_started
+      wiki:
+        condition: service_healthy
     command: [ "/opt/labki/scripts/run-jobrunner.sh" ]
