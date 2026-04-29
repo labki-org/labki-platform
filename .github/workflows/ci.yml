@@ -28,16 +28,29 @@ jobs:
     needs: lint
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        target: [prod, dev]
+        include:
+          - target: prod
+            extensions: enabled
+          - target: dev
+            extensions: enabled
+          # Cover the bootstrap branch where extensions.platform.php is
+          # skipped but skins.platform.php / defaults still load. Only on
+          # the prod target since the toggle isn't dev/prod-specific.
+          - target: prod
+            extensions: disabled
     steps:
       - uses: actions/checkout@v6
 
       - name: Make scripts executable
         run: chmod +x ci/smoke-test.sh scripts/*.sh docker/entrypoint.sh
 
-      - name: Run Smoke Test (${{ matrix.target }})
-        run: ./ci/smoke-test.sh ${{ matrix.target }}
+      - name: Run Smoke Test
+        env:
+          TARGET: ${{ matrix.target }}
+          EXTENSIONS_MODE: ${{ matrix.extensions }}
+        run: ./ci/smoke-test.sh "$TARGET" "$EXTENSIONS_MODE"
 
   security-scan:
     needs: smoke-test

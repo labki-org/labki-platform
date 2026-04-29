@@ -1,9 +1,12 @@
 <?php
 
-// LocalSettings.defaults.php - Safe defaults
-// These settings are reasonable defaults that legitimate users might want to override.
+// LocalSettings.defaults.php - Platform-owned overridable defaults
+//
+// These are reasonable starting values for settings that legitimate
+// users might want to change. Platform invariants (DB, cache backend,
+// permissions, uploads paths) live in LocalSettings.base.php and are
+// not expected to be overridden.
 
-// Protect against web entry
 if (!defined('MEDIAWIKI')) {
     exit;
 }
@@ -30,16 +33,31 @@ $wgShowExceptionDetails = false;
 // slower UX).
 $wgJobRunRate = 0;
 
-// Cache routing.
+// File uploads: extend MediaWiki's default image extensions
+// (png, gif, jpg, jpeg, webp) with the common document, data, media,
+// and archive formats a research wiki tends to need. Dangerous types
+// (html, js, php, exe, etc.) stay blocked by $wgFileBlacklist.
 //
-// All caches route to CACHE_DB to match $wgMainCacheType (set in
-// LocalSettings.base.php). Being explicit protects against surprises if
-// a user override flips $wgMainCacheType to something a given subsystem
-// can't use. SMW caches are left at their defaults (CACHE_ANYTHING),
-// which resolves through $wgMainCacheType.
-$wgSessionCacheType = CACHE_DB;
-$wgMessageCacheType = CACHE_DB;
-$wgParserCacheType  = CACHE_DB;
+// PHP's upload_max_filesize / post_max_size in
+// docker/php/labki-tuning.ini must be at least as permissive as
+// $wgMaxUploadSize for these to take effect.
+$wgFileExtensions = array_merge( $wgFileExtensions ?? [], [
+    // Documents
+    'pdf', 'rtf', 'txt', 'md',
+    'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
+    'odt', 'ods', 'odp',
+    // Data formats
+    'csv', 'tsv', 'json', 'xml', 'yaml', 'yml',
+    // Images (extends MW core's png/gif/jpg/jpeg/webp)
+    'svg', 'bmp', 'tiff', 'tif', 'heic',
+    // Audio
+    'mp3', 'wav', 'ogg', 'oga', 'flac', 'm4a',
+    // Video
+    'mp4', 'webm', 'mov', 'ogv',
+    // Archives
+    'zip', 'tar', 'gz', '7z',
+] );
+$wgMaxUploadSize = 50 * 1024 * 1024; // 50 MiB
 
 // Footer Badge - Powered by Labki
 $wgFooterIcons['poweredby']['labki'] = [

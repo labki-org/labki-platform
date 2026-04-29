@@ -25,19 +25,20 @@ services:
       MW_DB_PASSWORD: labki_pass
       MW_SITE_NAME: "Labki Dev"
       MW_ADMIN_PASS: "changeme123v_pass"
-      # Set to 1 to test without platform extensions
-      # MW_DISABLE_PLATFORM_EXTENSIONS: 0
+      # Pass through from host env so smoke-test.sh can drive enabled/disabled
+      # modes; defaults to 0 (extensions loaded) for normal dev use.
+      MW_DISABLE_PLATFORM_EXTENSIONS: ${MW_DISABLE_PLATFORM_EXTENSIONS:-0}
     # volumes:
     #   - ../mediawiki:/opt/labki/mediawiki
     #   - ../../MyExtension:/var/www/html/extensions/MyExtension
     #   - ../../MySkin:/mw-user-skins/MySkin
     depends_on:
       - db
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:80/wiki/Main_Page" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+    # Healthcheck inherits from the Dockerfile (start_period=60s,
+    # interval=30s, retries=3) — those tolerate the install + update.php
+    # window. Overriding here without start_period made compose mark the
+    # wiki unhealthy ~6s after start, which the jobrunner's
+    # `condition: service_healthy` then propagated as a hard failure.
 
   wiki-jobrunner:
     build:
@@ -50,7 +51,13 @@ services:
       MW_DB_NAME: labki
       MW_DB_USER: labki
       MW_DB_PASSWORD: labki_pass
+    # Wait for the wiki container to finish install + update.php before
+    # this one's entrypoint runs. Otherwise both containers race on
+    # install.php and the jobrunner (which has no MW_ADMIN_PASS) trips
+    # MW's minimum-password length on its no-op install attempt.
     depends_on:
-      - db
-      - wiki
+      db:
+        condition: service_started
+      wiki:
+        condition: service_healthy
     command: [ "/opt/labki/scripts/run-jobrunner.sh" ]

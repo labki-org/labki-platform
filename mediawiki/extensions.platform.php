@@ -1,5 +1,11 @@
 <?php
 // extensions.platform.php - Curated Platform Extensions
+//
+// Ordering note: ConfirmEdit must load before WikiForum and ConfirmAccount
+// so that captcha trigger settings are picked up when those extensions
+// register their forms. Skins are loaded in skins.platform.php (after this
+// file) and site-wide permissions live in LocalSettings.base.php.
+
 if (!defined('MEDIAWIKI')) {
     exit;
 }
@@ -30,8 +36,16 @@ wfLoadExtension('Lockdown');
 
 wfLoadExtension('Echo');
 wfLoadExtension('Linter');
+
 wfLoadExtension('VisualEditor');
-$wgDefaultUserOptions['visualeditor-editor'] = "visualeditor";
+$wgDefaultUserOptions['visualeditor-editor'] = 'visualeditor';
+// MediaWiki's default $wgVisualEditorSupportedSkins covers
+// vector / vector-2022 / monobook / minerva. Opt in our other
+// platform skins so users on Citizen or Tweeki get the VE edit
+// tab instead of falling back to source mode.
+$wgVisualEditorSupportedSkins[] = 'citizen';
+$wgVisualEditorSupportedSkins[] = 'tweeki';
+
 wfLoadExtension('DiscussionTools');
 
 wfLoadExtension('ConfirmEdit');
@@ -50,118 +64,23 @@ $wgCaptchaTriggers['badloginperuser'] = true;
 
 wfLoadExtension('WikiForum');
 $wgWikiForumAllowAnonymous = false;
-$wgCaptchaTriggers['wikiforum'] = false;
 
 wfLoadExtension('ConfirmAccount');
 
-// Workaround: ConfirmAccount renders OOUI forms before the skin sets the theme.
-// Ensure the OOUI theme singleton is initialized early to prevent RuntimeException.
+// Workaround: ConfirmAccount renders OOUI forms before the skin sets the
+// theme, which raises "Cannot use object of type ... as singleton" from
+// \OOUI\Theme::singleton(). We pre-initialize the singleton with the
+// stock WikimediaUITheme. Narrow the catch to the missing-singleton case
+// and log anything else so an unrelated regression doesn't go silent.
 $wgHooks['SetupAfterCache'][] = static function () {
     try {
         \OOUI\Theme::singleton();
     } catch ( \RuntimeException $e ) {
-        \OOUI\Theme::setSingleton( new \OOUI\WikimediaUITheme() );
+        if ( strpos( $e->getMessage(), 'singleton' ) !== false ) {
+            \OOUI\Theme::setSingleton( new \OOUI\WikimediaUITheme() );
+            return;
+        }
+        wfLogWarning( 'OOUI theme init: unexpected RuntimeException: ' . $e->getMessage() );
+        throw $e;
     }
 };
-
-// --- Permissions (private wiki by default) ---
-// To make your wiki public, add $wgGroupPermissions['*']['read'] = true;
-// to your LocalSettings.user.php
-
-$wgGroupPermissions['*']['read']            = false;
-$wgGroupPermissions['*']['createaccount']   = false;
-$wgGroupPermissions['*']['edit']            = false;
-$wgGroupPermissions['*']['writeapi']        = false;
-$wgGroupPermissions['*']['createpage']      = false;
-$wgGroupPermissions['*']['createtalk']      = false;
-
-$wgGroupPermissions['bureaucrat']['createaccount'] = true;
-
-$wgWhitelistRead = [
-    'Special:UserLogin',
-    'Special:CreateAccount',
-    'Special:RequestAccount',
-    'Special:PasswordReset',
-    'Main Page',
-];
-
-// --- Skins ---
-
-wfLoadSkin('Citizen');
-wfLoadSkin('chameleon');
-wfLoadSkin('Tweeki');
-$wgDefaultSkin = 'tweeki';
-
-// --- Labki Tweeki Defaults ---
-
-// Register and load custom CSS
-$wgResourceModules['skin.labki.tweeki.styles'] = [
-    'styles' => [ 'resources/styles/labki-tweeki.css' ],
-    'localBasePath' => $IP,
-    'remoteBasePath' => $wgResourceBasePath,
-];
-$wgTweekiSkinCustomCSS[] = 'skin.labki.tweeki.styles';
-
-// Register and load custom JS (notification badges, etc.)
-$wgResourceModules['skin.labki.tweeki.scripts'] = [
-    'scripts' => [ 'resources/scripts/labki-tweeki.js' ],
-    'dependencies' => [ 'mediawiki.api', 'skins.tweeki.scripts' ],
-    'localBasePath' => $IP,
-    'remoteBasePath' => $wgResourceBasePath,
-];
-$wgTweekiSkinCustomScriptModule = 'skin.labki.tweeki.scripts';
-
-// Full-width content when no sidebars are active
-$wgTweekiSkinGridNone = [
-    'mainoffset' => 0,
-    'mainwidth'  => 12,
-];
-
-// Disable footer icons (text links are cleaner; Labki badge still renders via $wgFooterIcons)
-$wgTweekiSkinFooterIcons = false;
-
-// Enable Bootstrap tooltips
-$wgTweekiSkinUseTooltips = true;
-
-// Hide UI clutter from anonymous users (private wiki context)
-$wgTweekiSkinHideAnon = [
-    'subnav'   => true,
-    'PERSONAL' => true,
-    'TOOLBOX'  => true,
-];
-
-// Custom navbar element: prominent "Log in" and "Request Account" buttons for anon users.
-// Tweeki's PERSONAL element has text-rendering bugs with login-private + createaccount,
-// so we bypass it with a clean custom element and hide PERSONAL for anon (above).
-$wgTweekiSkinNavigationalElements['LABKI-LOGIN'] = function ( $skin, $context ) {
-    if ( !$skin->getSkin()->getUser()->isAnon() ) {
-        return [];
-    }
-    $returnto = $skin->getSkin()->getTitle()->getPrefixedDBkey();
-    return [
-        [
-            'text' => wfMessage( 'login' )->text(),
-            'href' => SpecialPage::getTitleFor( 'Userlogin' )->getLocalURL( [ 'returnto' => $returnto ] ),
-            'id' => 'pt-login-private',
-        ],
-        [
-            'text' => wfMessage( 'requestaccount' )->text(),
-            'href' => SpecialPage::getTitleFor( 'RequestAccount' )->getLocalURL(),
-            'id' => 'pt-createaccount',
-        ],
-    ];
-};
-
-// Override navbar-right to include our login element before PERSONAL and search
-$wgTweekiSkinCustomNav['navbar-right'] = 'LABKI-LOGIN,PERSONAL,SEARCH';
-
-// Hide footer metadata (MW version info) from everyone
-$wgTweekiSkinHideAll = [
-    'footer-info' => true,
-];
-
-// Show real names in user links (academic context)
-$wgTweekiSkinUseRealnames = true;
-
-// Use pencil icon for edit-section links
-$wgTweekiSkinCustomEditSectionLink = true;
