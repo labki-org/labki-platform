@@ -24,10 +24,13 @@ The configuration is loaded in a strict order of precedence (lowest to highest).
 | :--- | :--- | :--- | :--- |
 | **Loader** | `/var/www/html/LocalSettings.php` | Platform | Auto-generated entry point. Loads `bootstrap.php`. **DO NOT EDIT.** |
 | **Glue** | `/opt/labki/mediawiki/bootstrap.php` | Platform | Orchestrates the loading sequence. |
-| **Base** | `/opt/labki/mediawiki/LocalSettings.base.php` | Platform | DB connection, cache config, jobrunner. **Never edited by users.** |
-| **Defaults** | `/opt/labki/mediawiki/LocalSettings.defaults.php` | Platform | Safe defaults (logging, memory limits). |
-| **Platform Exts** | `/opt/labki/mediawiki/extensions.platform.php` | Platform | Curated set (SMW, PageForms, etc.). Explicit `wfLoadExtension`. |
+| **Base** | `/opt/labki/mediawiki/LocalSettings.base.php` | Platform | DB, identity, object cache, uploads paths, private-wiki permission baseline. **Never edited by users.** |
+| **Defaults** | `/opt/labki/mediawiki/LocalSettings.defaults.php` | Platform | Overridable defaults (logging, memory, file extensions, job-runner rate, branding). |
+| **Platform Exts** | `/opt/labki/mediawiki/extensions.platform.php` | Platform | Curated extension set (SMW, PageForms, etc.). Skippable via `MW_DISABLE_PLATFORM_EXTENSIONS=1`. |
+| **Platform Skins** | `/opt/labki/mediawiki/skins.platform.php` | Platform | Curated skins (Vector, Citizen, chameleon, Tweeki) and `$wgDefaultSkin`. Loaded after extensions. |
 | **User Config** | `/mw-config/LocalSettings.user.php` | User | Site identity, secrets, overrides, extension loading. **Highest precedence. EDIT THIS FILE.** |
+
+For a per-file walkthrough of what goes where, see [`mediawiki/README.md`](../mediawiki/README.md).
 
 ## 3. Public Interface (Environment Variables)
 
