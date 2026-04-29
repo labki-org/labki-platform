@@ -49,7 +49,12 @@ echo "[smoke-test] Building image (target: $DOCKER_TARGET, extensions: $EXTENSIO
 docker compose -f "$COMPOSE_FILE" build
 
 echo "[smoke-test] Starting stack..."
-docker compose -f "$COMPOSE_FILE" up -d
+# Only start db + wiki. The jobrunner shares the wiki entrypoint and
+# would race on install.php; that's exercised in production where
+# `condition: service_healthy` makes the jobrunner wait for the wiki
+# to be ready. The smoke test is about verifying wiki config, not
+# job execution.
+docker compose -f "$COMPOSE_FILE" up -d db wiki
 
 echo "[smoke-test] Waiting for wiki to be ready..."
 MAX_RETRIES=30

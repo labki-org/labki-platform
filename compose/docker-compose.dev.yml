@@ -34,14 +34,11 @@ services:
     #   - ../../MySkin:/mw-user-skins/MySkin
     depends_on:
       - db
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:80/wiki/Main_Page" ]
-      interval: 10s
-      timeout: 10s
-      retries: 6
-      # Cover the install + update.php window on a fresh DB so the
-      # healthcheck doesn't mark the service unhealthy mid-install.
-      start_period: 90s
+    # Healthcheck inherits from the Dockerfile (start_period=60s,
+    # interval=30s, retries=3) — those tolerate the install + update.php
+    # window. Overriding here without start_period made compose mark the
+    # wiki unhealthy ~6s after start, which the jobrunner's
+    # `condition: service_healthy` then propagated as a hard failure.
 
   wiki-jobrunner:
     build:
