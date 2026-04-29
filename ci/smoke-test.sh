@@ -107,7 +107,10 @@ done
 # Curated extensions: present in 'enabled' mode, absent in 'disabled' mode.
 if [ "$EXTENSIONS_MODE" = "enabled" ]; then
     echo "[smoke-test] Verifying curated extensions are loaded..."
-    for ext in SemanticMediaWiki VisualEditor PageForms ConfirmAccount; do
+    # Names match the value the extension registers, which is occasionally
+    # the human-readable name rather than the directory name (e.g.
+    # ConfirmAccount registers as "Confirm User Accounts").
+    for ext in SemanticMediaWiki VisualEditor PageForms "Confirm User Accounts"; do
         contains_csv "$EXT_NAMES" "$ext" || fail "extension '$ext' missing in 'enabled' mode."
     done
 else
