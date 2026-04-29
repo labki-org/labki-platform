@@ -67,47 +67,70 @@ while [ $count -lt $MAX_RETRIES ]; do
 done
 [ "$success" = true ] || fail "Wiki did not respond in time."
 
-# --- Default skin ---
-# skins.platform.php loads regardless of MW_DISABLE_PLATFORM_EXTENSIONS,
-# so the body class on Main_Page should always include 'skin-vector-2022'.
-echo "[smoke-test] Verifying default skin on Main_Page..."
-MAIN_PAGE_HTML=$(curl -fs http://localhost:8080/wiki/Main_Page) \
-    || fail "could not fetch Main_Page."
-echo "$MAIN_PAGE_HTML" | grep -q 'skin-vector-2022' \
-    || fail "default skin is not vector-2022 on Main_Page."
-
 # --- siteinfo probe ---
-# The siteinfo meta API is public even with $wgGroupPermissions['*']['read']
-# = false; it returns metadata about installed skins/extensions/file types.
+# The siteinfo meta API returns installed skins, extensions, and file
+# types as authoritative metadata; we use it instead of HTML scraping
+# so the assertions don't depend on Vector's per-version body-class
+# conventions.
 echo "[smoke-test] Querying siteinfo API..."
 SITEINFO=$(curl -fs "http://localhost:8080/api.php?action=query&meta=siteinfo&siprop=skins|extensions|fileextensions&format=json") \
-    || fail "siteinfo query failed."
+    || fail "siteinfo query failed; HTTP error or non-JSON response."
+
+# Fail fast with a useful preview if the API didn't return valid JSON.
+echo "$SITEINFO" | python3 -c 'import json,sys; json.load(sys.stdin)' >/dev/null 2>&1 \
+    || { echo "[smoke-test] siteinfo response was not JSON. First 500 chars:"; echo "${SITEINFO:0:500}"; fail "siteinfo did not return JSON."; }
+
+# Default skin: skins.platform.php sets $wgDefaultSkin = 'vector-2022',
+# which MW exposes via the 'default' attribute on the matching skin in
+# the skins list. (The attribute is an empty string when present; jq
+# would say `has("default")`.)
+echo "[smoke-test] Verifying default skin..."
+DEFAULT_SKIN=$(echo "$SITEINFO" | python3 -c '
+import json, sys
+data = json.load(sys.stdin)
+for s in data["query"]["skins"]:
+    if "default" in s:
+        print(s["code"])
+        break
+')
+[ "$DEFAULT_SKIN" = "vector-2022" ] \
+    || fail "default skin is '$DEFAULT_SKIN', expected 'vector-2022'."
 
 # All four platform skins should be present in both modes.
 echo "[smoke-test] Verifying platform skins..."
 for skin in vector citizen tweeki chameleon; do
-    echo "$SITEINFO" | grep -q "\"code\":\"$skin\"" \
-        || fail "skin '$skin' missing from siteinfo."
+    echo "$SITEINFO" | python3 -c "
+import json, sys
+codes = [s['code'] for s in json.load(sys.stdin)['query']['skins']]
+sys.exit(0 if '$skin' in codes else 1)
+" || fail "skin '$skin' missing from siteinfo."
 done
 
-# Custom file extensions come from LocalSettings.defaults.php which loads
-# regardless of MW_DISABLE_PLATFORM_EXTENSIONS.
+# Custom file extensions come from LocalSettings.defaults.php which
+# loads regardless of MW_DISABLE_PLATFORM_EXTENSIONS.
 echo "[smoke-test] Verifying custom file extensions..."
 for filetype in pdf docx mp4 svg; do
-    echo "$SITEINFO" | grep -q "\"ext\":\"$filetype\"" \
-        || fail "file extension '$filetype' missing from siteinfo."
+    echo "$SITEINFO" | python3 -c "
+import json, sys
+exts = [e['ext'] for e in json.load(sys.stdin)['query']['fileextensions']]
+sys.exit(0 if '$filetype' in exts else 1)
+" || fail "file extension '$filetype' missing from siteinfo."
 done
 
 # Curated extensions: present in 'enabled' mode, absent in 'disabled' mode.
+EXT_NAMES=$(echo "$SITEINFO" | python3 -c '
+import json, sys
+print("\n".join(e.get("name", "") for e in json.load(sys.stdin)["query"]["extensions"]))
+')
 if [ "$EXTENSIONS_MODE" = "enabled" ]; then
     echo "[smoke-test] Verifying curated extensions are loaded..."
     for ext in SemanticMediaWiki VisualEditor PageForms ConfirmAccount; do
-        echo "$SITEINFO" | grep -q "\"name\":\"$ext\"" \
+        echo "$EXT_NAMES" | grep -qx "$ext" \
             || fail "extension '$ext' missing in 'enabled' mode."
     done
 else
     echo "[smoke-test] Verifying curated extensions are skipped..."
-    if echo "$SITEINFO" | grep -q "\"name\":\"SemanticMediaWiki\""; then
+    if echo "$EXT_NAMES" | grep -qx "SemanticMediaWiki"; then
         fail "SemanticMediaWiki present despite MW_DISABLE_PLATFORM_EXTENSIONS=1."
     fi
 fi
