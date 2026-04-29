@@ -25,7 +25,6 @@ wfLoadExtension('SemanticExtraSpecialProperties');
 wfLoadExtension('PageForms');
 wfLoadExtension('Maps');
 wfLoadExtension('Mermaid');
-wfLoadExtension('Bootstrap');
 
 // --- Git-cloned Extensions ---
 

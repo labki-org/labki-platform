@@ -70,7 +70,7 @@ The header comment in the file flags the constraint.
 
 ### `skins.platform.php` — curated skins
 
-`wfLoadSkin(...)` calls for Vector, Citizen, chameleon, Tweeki, and the
+`wfLoadSkin(...)` calls for Vector, Citizen, and Tweeki, plus the
 Tweeki-specific customization (custom CSS/JS modules, navbar elements
 including the LABKI-LOGIN and SPECIALPAGES entries).
 

@@ -19,22 +19,13 @@ wfLoadSkin('Vector');
 wfLoadSkin('Citizen');
 wfLoadSkin('Tweeki');
 
-// chameleon has a hard runtime dependency on the Bootstrap extension
-// (loaded in extensions.platform.php). Skip it when extensions are
-// disabled; otherwise MW Setup raises a fatal during the chameleon
-// initialization hook and update.php fails, putting the container
-// into a restart loop.
-if ( !getenv('MW_DISABLE_PLATFORM_EXTENSIONS') ) {
-    wfLoadSkin('chameleon');
-}
-
 $wgDefaultSkin = 'vector-2022';
 
 // --- Tweeki customization ---
 //
 // All $wgTweekiSkin* settings only take effect when Tweeki is the active
-// skin, so they are no-ops for users on Vector/Citizen/chameleon. Kept in
-// place for users who have selected Tweeki as their preference.
+// skin, so they are no-ops for users on Vector/Citizen. Kept in place for
+// users who have selected Tweeki as their preference.
 
 // Register and load custom CSS
 $wgResourceModules['skin.labki.tweeki.styles'] = [
@@ -44,10 +35,13 @@ $wgResourceModules['skin.labki.tweeki.styles'] = [
 ];
 $wgTweekiSkinCustomCSS[] = 'skin.labki.tweeki.styles';
 
-// Register and load custom JS (notification badges, etc.)
+// Register and load custom JS. Polls the Echo notifications count and
+// decorates the user dropdown toggle with an unread badge so logged-in
+// users see at-a-glance whether they have notifications without opening
+// the dropdown.
 $wgResourceModules['skin.labki.tweeki.scripts'] = [
     'scripts' => [ 'resources/scripts/labki-tweeki.js' ],
-    'dependencies' => [ 'mediawiki.api', 'skins.tweeki.scripts' ],
+    'dependencies' => [ 'mediawiki.api', 'mediawiki.user', 'skins.tweeki.scripts' ],
     'localBasePath' => $IP,
     'remoteBasePath' => $wgResourceBasePath,
 ];
@@ -64,6 +58,22 @@ $wgTweekiSkinFooterIcons = false;
 
 // Enable Bootstrap tooltips
 $wgTweekiSkinUseTooltips = true;
+
+// Register message overrides for Tweeki's PERSONAL fallback path.
+// TweekiTemplate.php (case 'PERSONAL') checks the OUTER ptool for
+// `text`; if missing, it falls back to `wfMessage($key)->text()`.
+// MediaWiki's getPersonalToolsForMakeListItem hoists `text` into
+// `links[0]`, so the outer level Echo populates is bare by the time
+// Tweeki sees it. Defining `notifications-alert` and `notifications-
+// notice` messages gives Tweeki's fallback a real string to render
+// instead of the raw-key marker `⟨notifications-alert⟩`.
+$wgMessagesDirs['LabkiPlatform'] = __DIR__ . '/i18n';
+
+// Echo hands the Notices entry an OOUI icon name `tray` which Tweeki
+// blindly emits as `<span class="fa fa-tray">`. FontAwesome Free
+// doesn't ship a `fa-tray` glyph, so the span renders empty. We give
+// `fa-tray` the inbox glyph in resources/styles/labki-tweeki.css —
+// see the comment there.
 
 // Hide UI clutter from anonymous users (private wiki context)
 $wgTweekiSkinHideAnon = [

@@ -60,11 +60,11 @@ wfLoadExtension( 'VisualEditor' );
     ```
 
 ### 4. Adding Skins
-Labki includes two skins by default: **Citizen** (the default) and **Chameleon** (a Bootstrap-based skin ideal for customization).
+Labki includes three skins by default: **Vector** (`vector-2022`, the default), **Citizen**, and **Tweeki** (Bootstrap-based, useful for wiki-as-website setups).
 
 To change the default skin, add to your `config/LocalSettings.user.php`:
 ```php
-$wgDefaultSkin = 'chameleon';
+$wgDefaultSkin = 'tweeki';
 ```
 
 **Adding Custom Skins**

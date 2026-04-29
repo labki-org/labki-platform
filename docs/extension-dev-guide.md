@@ -129,9 +129,10 @@ The Labki Platform also supports developing and testing custom MediaWiki skins. 
 
 ## Platform Skins
 
-The Platform bundles two skins:
--   **Citizen** (default) - A modern, responsive skin
--   **Chameleon** - A highly customizable Bootstrap-based skin, ideal as a base for child skins
+The Platform bundles three skins:
+-   **Vector** (default; `vector-2022`) - The stock MediaWiki skin
+-   **Citizen** - A modern, responsive skin
+-   **Tweeki** - A Bootstrap-based skin, useful for wiki-as-website deployments
 
 ## Basic Skin Development Setup
 
@@ -199,31 +200,6 @@ $wgShowExceptionDetails = true;
     docker compose up -d
     ```
 2.  **Visit the wiki** at `http://localhost:8080` to see your skin in action.
-
-## Developing Chameleon Child Skins
-
-The Labki Platform includes [Chameleon](https://github.com/ProfessionalWiki/chameleon), a powerful Bootstrap-based skin that supports customization through child skins.
-
-### Setting Up a Chameleon Child Skin
-
-1.  **Keep platform extensions enabled** so Chameleon is loaded:
-    ```yaml
-    MW_DISABLE_PLATFORM_EXTENSIONS: 0
-    ```
-
-2.  **In your `LocalSettings.test.php`**, load your child skin after Chameleon:
-    ```php
-    <?php
-    // Chameleon is already loaded by the platform
-    // Load your child skin
-    wfLoadSkin( 'MyCustomChameleon', '/mw-user-skins/MyCustomChameleon/skin.json' );
-
-    // Set your child skin as the default
-    $wgDefaultSkin = 'mycustomchameleon';
-
-    // Chameleon configuration options
-    $egChameleonLayoutFile = '/mw-user-skins/MyCustomChameleon/layouts/custom.xml';
-    ```
 
 ## Recipe: Overriding a Bundled Skin
 
