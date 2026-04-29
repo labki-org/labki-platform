@@ -37,6 +37,17 @@ wfLoadExtension('DiscussionTools');
 wfLoadExtension('ConfirmEdit');
 $wgCaptchaClass = 'SimpleCaptcha';
 
+// Captchas only guard account-creation flows (ConfirmAccount requests, signup,
+// failed logins). Editing pages — including edits that add external links —
+// must never show a captcha to logged-in users.
+$wgCaptchaTriggers['edit']            = false;
+$wgCaptchaTriggers['create']          = false;
+$wgCaptchaTriggers['addurl']          = false;
+$wgCaptchaTriggers['sendemail']       = false;
+$wgCaptchaTriggers['createaccount']   = true;
+$wgCaptchaTriggers['badlogin']        = true;
+$wgCaptchaTriggers['badloginperuser'] = true;
+
 wfLoadExtension('WikiForum');
 $wgWikiForumAllowAnonymous = false;
 $wgCaptchaTriggers['wikiforum'] = false;
