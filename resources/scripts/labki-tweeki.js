@@ -1,65 +1,38 @@
 /**
  * Labki Tweeki Scripts
  *
- * Adds notification badge counts for Echo alerts/notices.
- * Only loaded when Tweeki is the active skin (via $wgTweekiSkinCustomScriptModule).
+ * Tweeki's PERSONAL navbar renderer drops the link-level class attribute
+ * Echo adds in BeforePersonalUrls, so Echo's flyout init (which binds to
+ * `.mw-echo-notification-badge-nojs`) finds nothing to attach to and
+ * clicking the bell just navigates to Special:Notifications. This shim
+ * re-adds the expected class on the two notification anchors so the
+ * stock flyout works on Tweeki.
  */
 ( function () {
 	'use strict';
 
-	function updateNotificationBadges() {
-		var api = new mw.Api();
+	if ( mw.user.isAnon() ) {
+		return;
+	}
 
-		Promise.all( [
-			api.get( {
-				action: 'query',
-				meta: 'notifications',
-				notprop: 'count',
-				notsections: 'alert'
-			} ),
-			api.get( {
-				action: 'query',
-				meta: 'notifications',
-				notprop: 'count',
-				notsections: 'message'
-			} )
-		] ).then( function ( results ) {
-			var alertCount = results[ 0 ].query &&
-				results[ 0 ].query.notifications &&
-				results[ 0 ].query.notifications.rawcount || 0;
-			var noticeCount = results[ 1 ].query &&
-				results[ 1 ].query.notifications &&
-				results[ 1 ].query.notifications.rawcount || 0;
-
-			setBadge( 'pt-notifications-alert', alertCount );
-			setBadge( 'pt-notifications-notice', noticeCount );
+	function patchEchoBadges() {
+		// Echo registers `notifications-alert` and `notifications-notice`
+		// (older builds also use `notifications-message`). Cover both.
+		[ 'pt-notifications-alert', 'pt-notifications-notice', 'pt-notifications-message' ].forEach( function ( id ) {
+			var li = document.getElementById( id );
+			if ( !li ) {
+				return;
+			}
+			var anchor = li.querySelector( 'a' );
+			if ( anchor && !anchor.classList.contains( 'mw-echo-notification-badge-nojs' ) ) {
+				anchor.classList.add( 'mw-echo-notification-badge-nojs' );
+			}
 		} );
 	}
 
-	function setBadge( elementId, count ) {
-		var el = document.getElementById( elementId );
-		if ( !el ) {
-			return;
-		}
-
-		var existing = el.querySelector( '.labki-notif-badge' );
-		if ( existing ) {
-			existing.remove();
-		}
-
-		if ( count > 0 ) {
-			var badge = document.createElement( 'span' );
-			badge.className = 'labki-notif-badge';
-			badge.textContent = count > 99 ? '99+' : count;
-			el.appendChild( badge );
-			el.classList.add( 'labki-notif-unread' );
-		} else {
-			el.classList.remove( 'labki-notif-unread' );
-		}
+	if ( document.readyState !== 'loading' ) {
+		patchEchoBadges();
+	} else {
+		document.addEventListener( 'DOMContentLoaded', patchEchoBadges );
 	}
-
-	if ( !mw.user.isAnon() ) {
-		updateNotificationBadges();
-	}
-
 }() );

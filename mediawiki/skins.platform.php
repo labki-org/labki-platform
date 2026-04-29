@@ -35,10 +35,13 @@ $wgResourceModules['skin.labki.tweeki.styles'] = [
 ];
 $wgTweekiSkinCustomCSS[] = 'skin.labki.tweeki.styles';
 
-// Register and load custom JS (notification badges, etc.)
+// Register and load custom JS. Re-adds the `mw-echo-notification-badge-nojs`
+// class on the bell anchors that Tweeki's PERSONAL renderer strips, so
+// Echo's stock flyout init can bind. Depends on Tweeki's own scripts to
+// guarantee the navbar is rendered before our DOM patch runs.
 $wgResourceModules['skin.labki.tweeki.scripts'] = [
     'scripts' => [ 'resources/scripts/labki-tweeki.js' ],
-    'dependencies' => [ 'mediawiki.api', 'skins.tweeki.scripts' ],
+    'dependencies' => [ 'mediawiki.user', 'skins.tweeki.scripts' ],
     'localBasePath' => $IP,
     'remoteBasePath' => $wgResourceBasePath,
 ];
