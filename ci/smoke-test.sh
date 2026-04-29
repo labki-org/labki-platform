@@ -76,6 +76,8 @@ done
 echo "[smoke-test] Probing runtime config inside the container..."
 PROBE=$(docker compose -f "$COMPOSE_FILE" exec -T wiki php /opt/labki/scripts/probe-config.php) \
     || { echo "[smoke-test] probe output (stdout+stderr):"; echo "$PROBE"; fail "probe-config.php failed inside container."; }
+echo "[smoke-test] Probe returned:"
+echo "$PROBE" | sed 's/^/[smoke-test]   /'
 
 extract() { echo "$PROBE" | grep "^$1=" | head -1 | cut -d= -f2-; }
 contains_csv() { echo "$1" | tr ',' '\n' | grep -qx "$2"; }

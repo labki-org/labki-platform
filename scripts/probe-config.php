@@ -34,7 +34,19 @@ class LabkiProbeConfig extends Maintenance {
         }
         echo 'SKINS=' . implode( ',', $skinCodes ) . "\n";
 
+        // Modern extensions register through extension.json into
+        // ExtensionRegistry. Older ones (e.g. ConfirmAccount on some MW
+        // branches) only push a credits entry into $wgExtensionCredits.
+        // Merge both so the smoke test can assert against either kind.
         $extNames = array_keys( ExtensionRegistry::getInstance()->getAllThings() );
+        foreach ( ( $GLOBALS['wgExtensionCredits'] ?? [] ) as $group ) {
+            foreach ( $group as $credit ) {
+                if ( !empty( $credit['name'] ) ) {
+                    $extNames[] = $credit['name'];
+                }
+            }
+        }
+        $extNames = array_values( array_unique( $extNames ) );
         echo 'EXTENSIONS=' . implode( ',', $extNames ) . "\n";
     }
 }
