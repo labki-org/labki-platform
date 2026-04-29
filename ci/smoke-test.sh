@@ -8,7 +8,7 @@ set -euo pipefail
 # 3. Waits for HTTP 200 on Main_Page
 # 4. Probes Main_Page and the siteinfo API for expected:
 #    - default skin (vector-2022)
-#    - platform skins (Vector, Citizen, Tweeki, chameleon)
+#    - platform skins (Vector, Citizen, Tweeki)
 #    - curated extensions (SMW etc.) — present if enabled, absent if disabled
 #    - custom file extensions (pdf, docx, mp4, svg)
 # 5. Tears down the stack
@@ -96,13 +96,8 @@ echo "[smoke-test] Verifying default skin..."
 [ "$DEFAULT_SKIN" = "vector-2022" ] \
     || fail "default skin is '$DEFAULT_SKIN', expected 'vector-2022'."
 
-# Vector / Citizen / Tweeki load unconditionally. chameleon has a
-# hard dependency on the Bootstrap extension, so it's only loaded
-# when the curated extension set is loaded.
 echo "[smoke-test] Verifying platform skins..."
-EXPECTED_SKINS="vector citizen tweeki"
-[ "$EXTENSIONS_MODE" = "enabled" ] && EXPECTED_SKINS="$EXPECTED_SKINS chameleon"
-for skin in $EXPECTED_SKINS; do
+for skin in vector citizen tweeki; do
     contains_csv "$SKINS" "$skin" || fail "skin '$skin' missing from probe."
 done
 

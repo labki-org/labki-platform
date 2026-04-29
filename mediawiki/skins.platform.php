@@ -19,22 +19,13 @@ wfLoadSkin('Vector');
 wfLoadSkin('Citizen');
 wfLoadSkin('Tweeki');
 
-// chameleon has a hard runtime dependency on the Bootstrap extension
-// (loaded in extensions.platform.php). Skip it when extensions are
-// disabled; otherwise MW Setup raises a fatal during the chameleon
-// initialization hook and update.php fails, putting the container
-// into a restart loop.
-if ( !getenv('MW_DISABLE_PLATFORM_EXTENSIONS') ) {
-    wfLoadSkin('chameleon');
-}
-
 $wgDefaultSkin = 'vector-2022';
 
 // --- Tweeki customization ---
 //
 // All $wgTweekiSkin* settings only take effect when Tweeki is the active
-// skin, so they are no-ops for users on Vector/Citizen/chameleon. Kept in
-// place for users who have selected Tweeki as their preference.
+// skin, so they are no-ops for users on Vector/Citizen. Kept in place for
+// users who have selected Tweeki as their preference.
 
 // Register and load custom CSS
 $wgResourceModules['skin.labki.tweeki.styles'] = [
