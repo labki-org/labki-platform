@@ -33,14 +33,29 @@ $wgShowExceptionDetails = false;
 // slower UX).
 $wgJobRunRate = 0;
 
-// File uploads: allow the common research-wiki set of document and
-// data formats on top of MediaWiki's default image extensions. PHP's
-// upload_max_filesize / post_max_size in docker/php/labki-tuning.ini
-// must be at least as permissive as $wgMaxUploadSize for these to
-// take effect.
+// File uploads: extend MediaWiki's default image extensions
+// (png, gif, jpg, jpeg, webp) with the common document, data, media,
+// and archive formats a research wiki tends to need. Dangerous types
+// (html, js, php, exe, etc.) stay blocked by $wgFileBlacklist.
+//
+// PHP's upload_max_filesize / post_max_size in
+// docker/php/labki-tuning.ini must be at least as permissive as
+// $wgMaxUploadSize for these to take effect.
 $wgFileExtensions = array_merge( $wgFileExtensions ?? [], [
-    'pdf', 'svg', 'csv', 'tsv', 'txt', 'md', 'json',
-    'docx', 'xlsx', 'pptx', 'zip',
+    // Documents
+    'pdf', 'rtf', 'txt', 'md',
+    'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
+    'odt', 'ods', 'odp',
+    // Data formats
+    'csv', 'tsv', 'json', 'xml', 'yaml', 'yml',
+    // Images (extends MW core's png/gif/jpg/jpeg/webp)
+    'svg', 'bmp', 'tiff', 'tif', 'heic',
+    // Audio
+    'mp3', 'wav', 'ogg', 'oga', 'flac', 'm4a',
+    // Video
+    'mp4', 'webm', 'mov', 'ogv',
+    // Archives
+    'zip', 'tar', 'gz', '7z',
 ] );
 $wgMaxUploadSize = 50 * 1024 * 1024; // 50 MiB
 
