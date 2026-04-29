@@ -1,9 +1,14 @@
 <?php
 
 // LocalSettings.base.php - Platform-owned base configuration
-// This file is immutable and baked into the image.
+//
+// This file holds settings that the platform treats as invariants:
+// database connection, site identity, object cache backend, upload
+// paths, and the private-by-default permission baseline. It is loaded
+// first by bootstrap.php and is not expected to be overridden by users.
+// Per-user-overridable preferences (timezone, memory, file extensions,
+// branding, etc.) live in LocalSettings.defaults.php instead.
 
-// Protect against web entry
 if (!defined('MEDIAWIKI')) {
     exit;
 }
@@ -33,7 +38,15 @@ $wgServer = getenv('MW_SERVER') ?: "http://localhost:8080";
 // CLI maintenance scripts and Apache workers see different caches, which
 // produces hard-to-diagnose inconsistencies in MW + SMW workloads.
 // Revisit if/when Redis or Memcached is added to the deployment.
-$wgMainCacheType = CACHE_DB;
+//
+// All caches are pinned to CACHE_DB explicitly so the choice doesn't
+// silently fall through $wgMainCacheType for some subsystems and not
+// others. SMW caches inherit via their CACHE_ANYTHING defaults, which
+// resolve through $wgMainCacheType.
+$wgMainCacheType    = CACHE_DB;
+$wgSessionCacheType = CACHE_DB;
+$wgMessageCacheType = CACHE_DB;
+$wgParserCacheType  = CACHE_DB;
 $wgMemCachedServers = [];
 
 // --- Image Uploads ---
@@ -43,7 +56,26 @@ $wgUploadDirectory = "{$IP}/images";
 $wgUseImageMagick = true;
 $wgImageMagickConvertCommand = "/usr/bin/convert";
 
-// --- Default Permissions ---
+// --- Permissions: private wiki by default ---
+//
+// To make a wiki public, override `$wgGroupPermissions['*']['read'] = true;`
+// in /mw-config/LocalSettings.user.php. New-account creation is gated
+// behind ConfirmAccount: anonymous visitors cannot self-create accounts;
+// bureaucrats approve requests via Special:ConfirmAccounts.
 
-$wgGroupPermissions['*']['createaccount'] = false;
-$wgGroupPermissions['*']['edit'] = false;
+$wgGroupPermissions['*']['read']            = false;
+$wgGroupPermissions['*']['createaccount']   = false;
+$wgGroupPermissions['*']['edit']            = false;
+$wgGroupPermissions['*']['writeapi']        = false;
+$wgGroupPermissions['*']['createpage']      = false;
+$wgGroupPermissions['*']['createtalk']      = false;
+
+$wgGroupPermissions['bureaucrat']['createaccount'] = true;
+
+$wgWhitelistRead = [
+    'Special:UserLogin',
+    'Special:CreateAccount',
+    'Special:RequestAccount',
+    'Special:PasswordReset',
+    'Main Page',
+];

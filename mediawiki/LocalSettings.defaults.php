@@ -1,9 +1,12 @@
 <?php
 
-// LocalSettings.defaults.php - Safe defaults
-// These settings are reasonable defaults that legitimate users might want to override.
+// LocalSettings.defaults.php - Platform-owned overridable defaults
+//
+// These are reasonable starting values for settings that legitimate
+// users might want to change. Platform invariants (DB, cache backend,
+// permissions, uploads paths) live in LocalSettings.base.php and are
+// not expected to be overridden.
 
-// Protect against web entry
 if (!defined('MEDIAWIKI')) {
     exit;
 }
@@ -30,16 +33,16 @@ $wgShowExceptionDetails = false;
 // slower UX).
 $wgJobRunRate = 0;
 
-// Cache routing.
-//
-// All caches route to CACHE_DB to match $wgMainCacheType (set in
-// LocalSettings.base.php). Being explicit protects against surprises if
-// a user override flips $wgMainCacheType to something a given subsystem
-// can't use. SMW caches are left at their defaults (CACHE_ANYTHING),
-// which resolves through $wgMainCacheType.
-$wgSessionCacheType = CACHE_DB;
-$wgMessageCacheType = CACHE_DB;
-$wgParserCacheType  = CACHE_DB;
+// File uploads: allow the common research-wiki set of document and
+// data formats on top of MediaWiki's default image extensions. PHP's
+// upload_max_filesize / post_max_size in docker/php/labki-tuning.ini
+// must be at least as permissive as $wgMaxUploadSize for these to
+// take effect.
+$wgFileExtensions = array_merge( $wgFileExtensions ?? [], [
+    'pdf', 'svg', 'csv', 'tsv', 'txt', 'md', 'json',
+    'docx', 'xlsx', 'pptx', 'zip',
+] );
+$wgMaxUploadSize = 50 * 1024 * 1024; // 50 MiB
 
 // Footer Badge - Powered by Labki
 $wgFooterIcons['poweredby']['labki'] = [
