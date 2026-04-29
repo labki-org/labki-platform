@@ -17,8 +17,16 @@ if (!defined('MEDIAWIKI')) {
 // history button, etc.) without any per-skin overrides.
 wfLoadSkin('Vector');
 wfLoadSkin('Citizen');
-wfLoadSkin('chameleon');
 wfLoadSkin('Tweeki');
+
+// chameleon has a hard runtime dependency on the Bootstrap extension
+// (loaded in extensions.platform.php). Skip it when extensions are
+// disabled; otherwise MW Setup raises a fatal during the chameleon
+// initialization hook and update.php fails, putting the container
+// into a restart loop.
+if ( !getenv('MW_DISABLE_PLATFORM_EXTENSIONS') ) {
+    wfLoadSkin('chameleon');
+}
 
 $wgDefaultSkin = 'vector-2022';
 

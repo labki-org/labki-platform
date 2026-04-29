@@ -96,9 +96,13 @@ echo "[smoke-test] Verifying default skin..."
 [ "$DEFAULT_SKIN" = "vector-2022" ] \
     || fail "default skin is '$DEFAULT_SKIN', expected 'vector-2022'."
 
-# All four platform skins should be present in both modes.
+# Vector / Citizen / Tweeki load unconditionally. chameleon has a
+# hard dependency on the Bootstrap extension, so it's only loaded
+# when the curated extension set is loaded.
 echo "[smoke-test] Verifying platform skins..."
-for skin in vector citizen tweeki chameleon; do
+EXPECTED_SKINS="vector citizen tweeki"
+[ "$EXTENSIONS_MODE" = "enabled" ] && EXPECTED_SKINS="$EXPECTED_SKINS chameleon"
+for skin in $EXPECTED_SKINS; do
     contains_csv "$SKINS" "$skin" || fail "skin '$skin' missing from probe."
 done
 
