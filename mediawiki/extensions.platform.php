@@ -39,8 +39,11 @@ wfLoadExtension('Linter');
 
 wfLoadExtension('VisualEditor');
 $wgDefaultUserOptions['visualeditor-editor'] = 'visualeditor';
-// Tweeki is one of our supported skins; opt it in explicitly so logged-in
-// Tweeki users see the VisualEditor edit tab.
+// MediaWiki's default $wgVisualEditorSupportedSkins covers
+// vector / vector-2022 / monobook / minerva. Opt in our other
+// platform skins so users on Citizen or Tweeki get the VE edit
+// tab instead of falling back to source mode.
+$wgVisualEditorSupportedSkins[] = 'citizen';
 $wgVisualEditorSupportedSkins[] = 'tweeki';
 
 wfLoadExtension('DiscussionTools');
