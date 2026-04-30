@@ -1,25 +1,86 @@
 /**
  * Labki Tweeki Scripts
  *
- * Echo notifications under Tweeki live inside the user (PERSONAL)
- * dropdown rather than as standalone navbar icons. Echo's per-section
- * count is included in its message text but lost in transit (core's
- * getPersonalToolsForMakeListItem moves `text` into links[0] and Tweeki
- * falls back to `wfMessage($key)`, which gives us countless labels).
+ * Two responsibilities:
  *
- * This script polls notification counts and:
- *   - decorates the user dropdown toggle with a total-unread badge so
- *     the unread state is visible without opening the menu;
- *   - appends per-section counts ("Alerts (2)", "Notices (1)") to the
- *     dropdown items themselves.
+ * 1. Echo notifications under Tweeki live inside the user (PERSONAL)
+ *    dropdown rather than as standalone navbar icons. Per-section
+ *    counts get lost in transit (core's getPersonalToolsForMakeListItem
+ *    moves `text` into links[0] and Tweeki falls back to
+ *    `wfMessage($key)`, which produces label-only strings without the
+ *    count). Poll the notifications API and decorate the user toggle
+ *    + dropdown items with unread-count badges.
+ *
+ * 2. Light/dark theme toggle. Bootstrap 5.3 styles components based
+ *    on `<html data-bs-theme>`; we set it from localStorage on first
+ *    paint, then swap on click of the navbar toggle button. Falls
+ *    back to `prefers-color-scheme` when no preference is stored.
  */
 ( function () {
 	'use strict';
 
-	if ( mw.user.isAnon() ) {
-		return;
+	// === Theme toggle ===========================================
+	var THEME_STORAGE_KEY = 'labki-theme';
+	var TOGGLE_ID = 'labki-theme-toggle';
+
+	function readStoredTheme() {
+		try {
+			return localStorage.getItem( THEME_STORAGE_KEY );
+		} catch ( e ) {
+			return null;
+		}
 	}
 
+	function persistTheme( theme ) {
+		try {
+			localStorage.setItem( THEME_STORAGE_KEY, theme );
+		} catch ( e ) {
+			// localStorage unavailable (private browsing, quota); silent.
+		}
+	}
+
+	function preferredTheme() {
+		var stored = readStoredTheme();
+		if ( stored === 'light' || stored === 'dark' ) {
+			return stored;
+		}
+		if ( window.matchMedia && window.matchMedia( '(prefers-color-scheme: dark)' ).matches ) {
+			return 'dark';
+		}
+		return 'light';
+	}
+
+	function applyTheme( theme ) {
+		document.documentElement.setAttribute( 'data-bs-theme', theme );
+		var toggle = document.getElementById( TOGGLE_ID );
+		if ( toggle ) {
+			var icon = toggle.querySelector( 'span.fa' );
+			if ( icon ) {
+				icon.classList.remove( 'fa-sun', 'fa-moon' );
+				icon.classList.add( theme === 'dark' ? 'fa-sun' : 'fa-moon' );
+			}
+		}
+	}
+
+	function bindThemeToggle() {
+		var toggle = document.getElementById( TOGGLE_ID );
+		if ( !toggle ) {
+			return;
+		}
+		toggle.addEventListener( 'click', function ( e ) {
+			e.preventDefault();
+			var current = document.documentElement.getAttribute( 'data-bs-theme' ) || 'light';
+			var next = current === 'dark' ? 'light' : 'dark';
+			applyTheme( next );
+			persistTheme( next );
+		} );
+	}
+
+	// Apply the user's theme before the page paints to avoid a flash
+	// of light content under a dark preference.
+	applyTheme( preferredTheme() );
+
+	// === Echo notification badges ================================
 	var POLL_INTERVAL_MS = 60 * 1000;
 	var SECTION_TO_PT_ID = {
 		alert: 'pt-notifications-alert',
@@ -40,13 +101,13 @@
 		return toggles[ 0 ] || null;
 	}
 
-	function setBadge( el, count, prefix ) {
+	function setBadge( el, count ) {
 		if ( !el ) {
 			return;
 		}
 		var existing = el.querySelector( ':scope > .labki-notif-badge' );
 		if ( count > 0 ) {
-			var label = ( prefix || '' ) + ( count > 99 ? '99+' : String( count ) );
+			var label = count > 99 ? '99+' : String( count );
 			if ( existing ) {
 				existing.textContent = label;
 			} else {
@@ -60,7 +121,10 @@
 		}
 	}
 
-	function refresh() {
+	function refreshBadges() {
+		if ( mw.user.isAnon() ) {
+			return;
+		}
 		var api = new mw.Api();
 		api.get( {
 			action: 'query',
@@ -88,9 +152,17 @@
 		} );
 	}
 
+	// === Init ===================================================
 	function start() {
-		refresh();
-		setInterval( refresh, POLL_INTERVAL_MS );
+		// Re-apply theme now that the toggle button is in the DOM, so
+		// its icon is in sync with the current `data-bs-theme`.
+		applyTheme( preferredTheme() );
+		bindThemeToggle();
+
+		if ( !mw.user.isAnon() ) {
+			refreshBadges();
+			setInterval( refreshBadges, POLL_INTERVAL_MS );
+		}
 	}
 
 	if ( document.readyState !== 'loading' ) {

@@ -18,8 +18,59 @@
 	--labki-bg-subtle:     #f4f6f8;
 	--labki-border:        #d8dde3;
 	--labki-heading:       #1a3a5c;
-	--labki-warning:       var(--labki-warning);
+	--labki-warning:       #f0ad4e;
 	--labki-danger:        #d9534f;
+}
+
+/* Dark theme palette. Bootstrap 5.3 handles most components via
+   `data-bs-theme="dark"`; we just retune the `--labki-*` palette so
+   our custom navbar / heading / link styles match the dark page. */
+[data-bs-theme="dark"] {
+	--labki-primary:       #0d1f33;
+	--labki-primary-light: #173052;
+	--labki-primary-dark:  #050d14;
+	--labki-accent:        #5fa3d6;
+	--labki-accent-hover:  #7cb6e0;
+	--labki-text:          #e6edf3;
+	--labki-text-muted:    #9aa6b3;
+	--labki-bg-subtle:     #1a2230;
+	--labki-border:        #2c3645;
+	--labki-heading:       #b8d4f0;
+	--labki-warning:       #f0ad4e;
+	--labki-danger:        #e25d59;
+}
+
+[data-bs-theme="dark"] body {
+	background-color: #0d1117;
+	color: var(--labki-text);
+}
+
+[data-bs-theme="dark"] #content {
+	background-color: #161b22;
+	color: var(--labki-text);
+}
+
+[data-bs-theme="dark"] footer.footer,
+[data-bs-theme="dark"] #footer {
+	background-color: #0d1117;
+	color: var(--labki-text-muted);
+}
+
+/* === Theme toggle button === */
+/* Strip the default link underline / dropdown caret styling so the
+   icon-only toggle reads as a button. */
+#labki-theme-toggle {
+	color: rgba(255, 255, 255, 0.85) !important;
+	cursor: pointer;
+}
+
+#labki-theme-toggle::after {
+	display: none; /* suppress Bootstrap caret */
+}
+
+#labki-theme-toggle:hover,
+#labki-theme-toggle:focus {
+	color: #fff !important;
 }
 
 /* === Navbar === */
