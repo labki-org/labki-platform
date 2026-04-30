@@ -3,5 +3,7 @@
 		"authors": []
 	},
 	"notifications-alert": "Alerts",
-	"notifications-notice": "Notices"
+	"notifications-notice": "Notices",
+	"tweeki-footer-custom": "* Powered by [https://github.com/labki-org/labki-platform Labki Platform]",
+	"labki-toggle-theme": "Toggle light / dark theme"
 }

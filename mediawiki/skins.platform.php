@@ -119,13 +119,52 @@ $wgTweekiSkinNavigationalElements['SPECIALPAGES'] = function ( $skin, $context )
     ];
 };
 
+// Light/dark theme toggle. The actual theme switch is driven by JS in
+// labki-tweeki.js (toggles `<html data-bs-theme>` and persists the
+// choice in localStorage). The button starts with a moon icon; the
+// shim swaps to a sun when dark mode is active. Bootstrap 5.3 styles
+// most components via `data-bs-theme`; the labki-tweeki.css overrides
+// the `--labki-*` palette under `[data-bs-theme="dark"]`.
+//
+// Inject a tiny <script> at the top of <head> that applies the stored
+// theme synchronously before paint, so users with dark preference
+// don't see a flash of light content while ResourceLoader catches up.
+$wgHooks['BeforePageDisplay'][] = static function ( $out, $skin ) {
+    if ( strtolower( $skin->getSkinName() ) !== 'tweeki' ) {
+        return;
+    }
+    $out->addHeadItem(
+        'labki-theme-init',
+        "<script>(function(){try{var t=localStorage.getItem('labki-theme');"
+        . "if(!t&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches){t='dark';}"
+        . "if(t==='dark'){document.documentElement.setAttribute('data-bs-theme','dark');}}"
+        . "catch(e){}})();</script>"
+    );
+};
+$wgTweekiSkinNavigationalElements['LABKI-THEME-TOGGLE'] = function ( $skin, $context ) {
+    return [ [
+        'text'  => '',
+        'href'  => '#',
+        'id'    => 'labki-theme-toggle',
+        'icon'  => 'moon',
+        'title' => wfMessage( 'labki-toggle-theme' )->text(),
+    ] ];
+};
+
 // Override navbar-right to include our custom elements before PERSONAL and search
-$wgTweekiSkinCustomNav['navbar-right'] = 'LABKI-LOGIN,SPECIALPAGES,PERSONAL,SEARCH';
+$wgTweekiSkinCustomNav['navbar-right'] = 'LABKI-LOGIN,SPECIALPAGES,PERSONAL,LABKI-THEME-TOGGLE,SEARCH';
 
 // Hide footer metadata (MW version info) from everyone
 $wgTweekiSkinHideAll = [
     'footer-info' => true,
 ];
+
+// Tweeki hides the footer-custom block from logged-in users by default.
+// Override that — our default `tweeki-footer-custom` message renders a
+// "Powered by Labki Platform" attribution that should be visible site-
+// wide. Operators can blank `MediaWiki:Tweeki-footer-custom` to remove
+// it, or replace with their own wikitext list.
+$wgTweekiSkinHideLoggedin = [];
 
 // Show real names in user links (academic context)
 $wgTweekiSkinUseRealnames = true;
