@@ -82,6 +82,43 @@ $wgTweekiSkinHideAnon = [
     'TOOLBOX'  => true,
 ];
 
+// Surface Tweeki's EDIT-EXT split-button dropdown for everyone. By default
+// Tweeki gates EDIT-EXT-special on the per-user `tweeki-advanced` pref, so
+// the dropdown — which carries Edit source, View history, Move, Delete,
+// Watch, Add category (from SemanticSchemas), etc. — is hidden for non-
+// "advanced" users. Unhide it globally so the rich dropdown is the default.
+//
+// Done via $wgExtensionFunctions because Tweeki's skin.json config is
+// applied by ExtensionRegistry *after* LocalSettings runs, so a plain
+// reassignment here would just be overwritten back to the skin default.
+// Using `unset` is targeted: it pulls only the `EDIT-EXT-special` key
+// without disturbing any other entries an admin may add to this array.
+// We also can't just flip $wgDefaultUserOptions['tweeki-advanced'] — any
+// user who's already touched their preferences page has an empty value
+// stored in user_properties that takes precedence over the default.
+$wgExtensionFunctions[] = static function () {
+    unset( $GLOBALS['wgTweekiSkinHideNonAdvanced']['EDIT-EXT-special'] );
+};
+
+// Hide Tweeki's edit button for users who can't edit the current page (anon
+// users on a private wiki, viewer-only groups, protected pages, etc.). By
+// default Tweeki swaps `edit` for `viewsource` and shows a "View source"
+// button — useful on Wikipedia, but in our context it's a dead end that
+// just prompts a login wall, so we drop the whole element. Admins who can
+// edit see the full dropdown unchanged.
+$wgHooks['SkinTweekiCheckVisibility'][] = static function ( $template, $item ) {
+    if ( $item !== 'EDIT' && $item !== 'EDIT-EXT' && $item !== 'EDIT-EXT-special' ) {
+        return true;
+    }
+    $skin = $template->getSkin();
+    $title = $skin->getTitle();
+    if ( $title === null ) {
+        return true;
+    }
+    $pm = MediaWiki\MediaWikiServices::getInstance()->getPermissionManager();
+    return $pm->userCan( 'edit', $skin->getUser(), $title );
+};
+
 // Custom navbar element: prominent "Log in" and "Request Account" buttons for anon users.
 // Tweeki's PERSONAL element has text-rendering bugs with login-private + createaccount,
 // so we bypass it with a clean custom element and hide PERSONAL for anon (above).
@@ -104,19 +141,56 @@ $wgTweekiSkinNavigationalElements['LABKI-LOGIN'] = function ( $skin, $context ) 
     ];
 };
 
-// Tweeki's default navigation does not surface a Special Pages link, so add
-// one for logged-in users. Anonymous users would just hit a login wall.
-$wgTweekiSkinNavigationalElements['SPECIALPAGES'] = function ( $skin, $context ) {
-    if ( $skin->getSkin()->getUser()->isAnon() ) {
-        return [];
+// Customize the user dropdown for logged-in Tweeki users:
+//  1. Surface a Special Pages link (Tweeki's default has none, and we
+//     pulled it out of navbar-right). Insert after `mytalk` so it lands
+//     in the top group with userpage and Echo's Notices/Alerts, before
+//     Tweeki's divider that precedes `preferences`.
+//  2. Replace the OOUI icon names MediaWiki sets by default (e.g.
+//     `userAvatar`, `userTalk`, `settings`) with FontAwesome names.
+//     Tweeki emits `<span class="fa fa-{icon}"></span>` and ships FA 5
+//     Free Solid, which has no glyphs for the OOUI names — so without
+//     overriding, every entry renders as a blank span. Scoped to Tweeki
+//     because Vector 2022 / Citizen render those OOUI names via their
+//     own sprites and would lose their icons if we clobbered them.
+// Anonymous users would just hit a login wall and PERSONAL is hidden
+// for them via $wgTweekiSkinHideAnon, so skip them entirely.
+$wgHooks['SkinTemplateNavigation::Universal'][] = static function ( $sktemplate, &$links ) {
+    if ( strtolower( $sktemplate->getSkinName() ) !== 'tweeki' ) {
+        return;
     }
-    return [
-        [
-            'text' => wfMessage( 'specialpages' )->text(),
-            'href' => SpecialPage::getTitleFor( 'Specialpages' )->getLocalURL(),
-            'id' => 'pt-specialpages',
-        ],
+    if ( $sktemplate->getUser()->isAnon() ) {
+        return;
+    }
+    $specialpages = [
+        'text' => wfMessage( 'specialpages' )->text(),
+        'href' => SpecialPage::getTitleFor( 'Specialpages' )->getLocalURL(),
+        'id'   => 'pt-specialpages',
+        'icon' => 'list',
     ];
+    if ( isset( $links['user-menu']['mytalk'] ) ) {
+        $links['user-menu'] = wfArrayInsertAfter(
+            $links['user-menu'],
+            [ 'specialpages' => $specialpages ],
+            'mytalk'
+        );
+    } else {
+        $links['user-menu']['specialpages'] = $specialpages;
+    }
+
+    $iconMap = [
+        'userpage'    => 'user',
+        'mytalk'      => 'comments',
+        'preferences' => 'cog',
+        'watchlist'   => 'star',
+        'mycontris'   => 'history',
+        'logout'      => 'sign-out-alt',
+    ];
+    foreach ( $iconMap as $key => $icon ) {
+        if ( isset( $links['user-menu'][$key] ) ) {
+            $links['user-menu'][$key]['icon'] = $icon;
+        }
+    }
 };
 
 // Light/dark theme toggle. The actual theme switch is driven by JS in
@@ -152,7 +226,7 @@ $wgTweekiSkinNavigationalElements['LABKI-THEME-TOGGLE'] = function ( $skin, $con
 };
 
 // Override navbar-right to include our custom elements before PERSONAL and search
-$wgTweekiSkinCustomNav['navbar-right'] = 'LABKI-LOGIN,SPECIALPAGES,PERSONAL,LABKI-THEME-TOGGLE,SEARCH';
+$wgTweekiSkinCustomNav['navbar-right'] = 'LABKI-LOGIN,PERSONAL,LABKI-THEME-TOGGLE,SEARCH';
 
 // Hide footer metadata (MW version info) from everyone
 $wgTweekiSkinHideAll = [
