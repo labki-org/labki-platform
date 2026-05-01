@@ -1,7 +1,7 @@
 {
     "require": {
         "mediawiki/semantic-media-wiki": "~6.0",
-        "mediawiki/semantic-result-formats": "~5.1",
+        "mediawiki/semantic-result-formats": "~5.2",
         "mediawiki/page-forms": "~6",
         "mediawiki/maps": "~12",
         "mediawiki/semantic-extra-special-properties": "~4",
