@@ -1,7 +1,7 @@
 {
     "require": {
         "mediawiki/semantic-media-wiki": "~6.0",
-        "mediawiki/semantic-result-formats": "~5.2",
+        "mediawiki/semantic-result-formats": "dev-master#7aed73963d6358cbd7567d3d309487e810d6526a",
         "mediawiki/page-forms": "~6",
         "mediawiki/maps": "~12",
         "mediawiki/semantic-extra-special-properties": "~4",
@@ -10,6 +10,8 @@
         "mediawiki/mermaid": "~6.0.1",
         "scssphp/scssphp": "~1.11"
     },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
     "config": {
         "allow-plugins": {
             "composer/installers": true,
