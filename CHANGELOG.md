@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CHANGELOG.md for tracking releases
 - CI badges in README
 
+### Changed
+- Default skin is now Tweeki (was vector-2022). Tweeki is the curated labki experience and carries platform-specific chrome (labki-tweeki.css/js — theme toggle, sidebar drawer, page-actions relocation, login-state classes, LABKI-LOGIN / LABKI-THEME-TOGGLE nav elements). Vector and Citizen remain loaded; users can switch via Special:Preferences. Existing users with a saved skin preference are unaffected.
+
 ## [0.1.0] - 2026-01-13
 
 ### Added
