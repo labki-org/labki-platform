@@ -31,6 +31,13 @@ wfLoadExtension('Mermaid');
 wfLoadExtension('MsUpload');
 wfLoadExtension('Lockdown');
 
+// PageForms add-on: registers labki-datetime / labki-date / labki-time
+// input types backed by flatpickr. Must load after PageForms (above) so
+// the FormPrinterSetup hook fires correctly. To make it the wiki-wide
+// default for all SMW Date properties, set in LocalSettings.user.php:
+//   $wgSemanticSchemasDatatypeInputOverrides['Date'] = 'labki-datetime';
+wfLoadExtension('LabkiPageFormsInputs');
+
 // --- Bundled MediaWiki Extensions (shipped with MW 1.44) ---
 
 wfLoadExtension('Echo');
