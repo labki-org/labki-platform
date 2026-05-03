@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CONTRIBUTING.md with contributor guidelines
 - CHANGELOG.md for tracking releases
 - CI badges in README
+- TemplateStyles extension (bundled with MediaWiki 1.44) loaded by default. Schema bundles can now ship per-template CSS via `<templatestyles src="Template:Foo/styles.css" />` without requiring site-wide `editsitecss` rights for deploy bots.
 
 ## [0.1.0] - 2026-01-13
 

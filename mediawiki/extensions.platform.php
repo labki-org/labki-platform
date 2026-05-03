@@ -37,6 +37,12 @@ wfLoadExtension('Echo');
 wfLoadExtension('Linter');
 wfLoadExtension('SyntaxHighlight_GeSHi');
 
+// TemplateStyles lets templates ship sanitized, scoped CSS via
+// <templatestyles src="Template:Foo/styles.css" /> without needing
+// site-wide editsitecss rights. Schema bundles (e.g. SchemaSync) use
+// this to package per-template CSS alongside their templates.
+wfLoadExtension('TemplateStyles');
+
 wfLoadExtension('VisualEditor');
 $wgDefaultUserOptions['visualeditor-editor'] = 'visualeditor';
 // MediaWiki's default $wgVisualEditorSupportedSkins covers
