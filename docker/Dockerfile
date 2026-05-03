@@ -11,9 +11,10 @@ LABEL org.opencontainers.image.version.mediawiki="${MEDIAWIKI_VERSION}"
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 WORKDIR /var/www/html
 
-# Install build dependencies (git: extensions, unzip: composer, mariadb-client: DB checks)
+# Install build dependencies (git: extensions, unzip: composer, mariadb-client: DB checks,
+# python3: SyntaxHighlight_GeSHi's bundled pygmentize is a Python script).
 RUN apt-get update && apt-get install -y \
-    git unzip ca-certificates mariadb-client curl \
+    git unzip ca-certificates mariadb-client curl python3 \
     && rm -rf /var/lib/apt/lists/*
 
 # Apache + PHP tuning for long-lived MediaWiki deployments.

@@ -35,6 +35,7 @@ wfLoadExtension('Lockdown');
 
 wfLoadExtension('Echo');
 wfLoadExtension('Linter');
+wfLoadExtension('SyntaxHighlight_GeSHi');
 
 wfLoadExtension('VisualEditor');
 $wgDefaultUserOptions['visualeditor-editor'] = 'visualeditor';
