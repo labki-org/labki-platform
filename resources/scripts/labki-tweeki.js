@@ -146,8 +146,22 @@
 		return svg;
 	}
 
+	// True when #sidebar-right has rendered content worth collapsing.
+	// Called after relocatePageActions(), so the action cluster has
+	// already been lifted out — what remains is TOC, portals, etc.
+	// If the sidebar's only content was the action cluster, there's
+	// nothing left to hide and the toggle is pointless.
+	function sidebarHasContent( sidebar ) {
+		if ( sidebar.textContent.trim().length > 0 ) {
+			return true;
+		}
+		// Catch icon-only / embed-only sidebars that have no text.
+		return !!sidebar.querySelector( 'img, svg, hr, video, iframe' );
+	}
+
 	function installSidebarToggle() {
-		if ( !document.getElementById( 'sidebar-right' ) ) {
+		var sidebar = document.getElementById( 'sidebar-right' );
+		if ( !sidebar || !sidebarHasContent( sidebar ) ) {
 			return;
 		}
 
@@ -360,8 +374,11 @@
 		applyTheme( preferredTheme() );
 		bindThemeToggle();
 
-		installSidebarToggle();
+		// relocatePageActions runs first so installSidebarToggle sees the
+		// sidebar in its final state — if the action cluster was the
+		// sidebar's only content, the toggle won't install.
 		relocatePageActions();
+		installSidebarToggle();
 		localizeTimestamps();
 
 		if ( !mw.user.isAnon() ) {
