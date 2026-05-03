@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Page-actions relocation: the action-button cluster (Edit, History, …) is lifted out of `#sidebar-right` and re-anchored at the top-right of the content card, so it stays visible when the sidebar is collapsed and on narrow windows.
 - `<html>` is tagged with `is-anon` or `is-logged-in` so per-wiki CSS can render login-conditional UI without a DOM round-trip.
 - Timestamp localization: SMW-rendered UTC ISO timestamps in `<time datetime="...">` elements (preferred) and bare ISO strings inside wikitext tables are converted to the viewer's locale via `toLocaleString()`. Idempotent.
+- TemplateStyles extension (bundled with MediaWiki 1.44) loaded by default. Schema bundles can now ship per-template CSS via `<templatestyles src="Template:Foo/styles.css" />` without requiring site-wide `editsitecss` rights for deploy bots.
 
 ## [0.1.0] - 2026-01-13
 
