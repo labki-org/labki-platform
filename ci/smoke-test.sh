@@ -93,8 +93,8 @@ FILE_EXTS=$(extract FILE_EXTENSIONS)
 EXT_NAMES=$(extract EXTENSIONS)
 
 echo "[smoke-test] Verifying default skin..."
-[ "$DEFAULT_SKIN" = "vector-2022" ] \
-    || fail "default skin is '$DEFAULT_SKIN', expected 'vector-2022'."
+[ "$DEFAULT_SKIN" = "tweeki" ] \
+    || fail "default skin is '$DEFAULT_SKIN', expected 'tweeki'."
 
 echo "[smoke-test] Verifying platform skins..."
 for skin in vector citizen tweeki; do

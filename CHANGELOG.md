@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Timestamp localization: SMW-rendered UTC ISO timestamps in `<time datetime="...">` elements (preferred) and bare ISO strings inside wikitext tables are converted to the viewer's locale via `toLocaleString()`. Idempotent.
 - TemplateStyles extension (bundled with MediaWiki 1.44) loaded by default. Schema bundles can now ship per-template CSS via `<templatestyles src="Template:Foo/styles.css" />` without requiring site-wide `editsitecss` rights for deploy bots.
 
+### Changed
+- Default skin is now Tweeki (was vector-2022). Tweeki is the curated labki experience and carries platform-specific chrome (labki-tweeki.css/js — theme toggle, sidebar drawer, page-actions relocation, login-state classes, LABKI-LOGIN / LABKI-THEME-TOGGLE nav elements). Vector and Citizen remain loaded; users can switch via Special:Preferences. Existing users with a saved skin preference are unaffected.
+
 ## [0.1.0] - 2026-01-13
 
 ### Added

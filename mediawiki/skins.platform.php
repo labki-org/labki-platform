@@ -11,15 +11,22 @@ if (!defined('MEDIAWIKI')) {
 
 // --- Skin loads ---
 //
-// Vector ships with MediaWiki and provides both the legacy ('vector') and
-// current ('vector-2022') skins. We default to vector-2022 to match stock
-// MediaWiki and surface standard navigation (sidebar with Special pages,
-// history button, etc.) without any per-skin overrides.
+// Tweeki is the curated labki experience: it carries platform-specific
+// chrome (labki-tweeki.css/js — navbar, footer, theme toggle, sidebar
+// drawer, page-actions relocation, login-state classes, custom nav
+// elements like LABKI-LOGIN and LABKI-THEME-TOGGLE), so anonymous
+// viewers and new accounts land here by default.
+//
+// Vector ships with MediaWiki (legacy 'vector' and current 'vector-2022')
+// and Citizen is loaded too — both stay available for users who prefer a
+// different skin via Special:Preferences. Existing users with a saved
+// skin preference are unaffected; only the anon/new-account default
+// changes here.
 wfLoadSkin('Vector');
 wfLoadSkin('Citizen');
 wfLoadSkin('Tweeki');
 
-$wgDefaultSkin = 'vector-2022';
+$wgDefaultSkin = 'tweeki';
 
 // --- Tweeki customization ---
 //
