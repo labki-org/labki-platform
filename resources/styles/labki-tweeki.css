@@ -417,6 +417,24 @@ body.sidebar-collapsed .sidebar-toggle svg {
 	margin: 0;
 }
 
+/* Pre-relocate, the action cluster paints inside #sidebar-right. The flex
+   `order: -1` we apply below puts the sidebar visually on the LEFT, so
+   without this rule users see the cluster flash at top-left for one frame
+   before JS moves it to the .page-actions anchor at top-right. Hide the
+   server-rendered location via visibility so layout still reserves the
+   space (no jump). The keyframe is a JS-broken safety fallback: if init
+   hasn't relocated within 1s, reveal in place so the affordance is never
+   permanently lost. Once relocated, the cluster is inside .page-actions
+   (outside #sidebar-right) and this selector no longer matches. */
+@keyframes labki-page-actions-reveal {
+	to { visibility: visible; }
+}
+
+#sidebar-right :is(#p-cactions, #p-views, .tweeki-cactions) {
+	visibility: hidden;
+	animation: labki-page-actions-reveal 0s 1s forwards;
+}
+
 /* Reserve room so the heading text doesn't underflow the action button. */
 .mw-body #firstHeading,
 #content #firstHeading {

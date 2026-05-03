@@ -149,14 +149,14 @@
 	// True when #sidebar-right has rendered content worth collapsing.
 	// Called after relocatePageActions(), so the action cluster has
 	// already been lifted out — what remains is TOC, portals, etc.
-	// If the sidebar's only content was the action cluster, there's
-	// nothing left to hide and the toggle is pointless.
+	// Structural check (children.length) rather than textContent: Tweeki
+	// renders the scroll-spy TOC as an empty <div id="tweekiTOC"> that
+	// gets populated client-side AFTER our init runs, so a text-based
+	// check would skip the toggle on every page with a yet-to-be-filled
+	// TOC. If the sidebar's only content was the action cluster,
+	// relocatePageActions has emptied it and we correctly skip.
 	function sidebarHasContent( sidebar ) {
-		if ( sidebar.textContent.trim().length > 0 ) {
-			return true;
-		}
-		// Catch icon-only / embed-only sidebars that have no text.
-		return !!sidebar.querySelector( 'img, svg, hr, video, iframe' );
+		return sidebar.children.length > 0;
 	}
 
 	function installSidebarToggle() {
