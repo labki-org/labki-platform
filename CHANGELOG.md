@@ -12,6 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CONTRIBUTING.md with contributor guidelines
 - CHANGELOG.md for tracking releases
 - CI badges in README
+- Surface and elevation design tokens (`--labki-surface`, `--labki-shadow-sm`, `--labki-shadow-md`, `--labki-radius`) — schema bundles and per-wiki CSS can compose against these and flip cleanly with `[data-bs-theme="dark"]`.
+- Right sidebar collapse drawer: `js/labki-tweeki.js` injects a viewport-anchored pull-tab button that toggles `body.sidebar-collapsed`; state persists in `localStorage["labki.sidebarCollapsed"]`.
+- Page-actions relocation: the action-button cluster (Edit, History, …) is lifted out of `#sidebar-right` and re-anchored at the top-right of the content card, so it stays visible when the sidebar is collapsed and on narrow windows.
+- `<html>` is tagged with `is-anon` or `is-logged-in` so per-wiki CSS can render login-conditional UI without a DOM round-trip.
+- Timestamp localization: SMW-rendered UTC ISO timestamps in `<time datetime="...">` elements (preferred) and bare ISO strings inside wikitext tables are converted to the viewer's locale via `toLocaleString()`. Idempotent.
+- TemplateStyles extension (bundled with MediaWiki 1.44) loaded by default. Schema bundles can now ship per-template CSS via `<templatestyles src="Template:Foo/styles.css" />` without requiring site-wide `editsitecss` rights for deploy bots.
 
 ### Changed
 - Default skin is now Tweeki (was vector-2022). Tweeki is the curated labki experience and carries platform-specific chrome (labki-tweeki.css/js — theme toggle, sidebar drawer, page-actions relocation, login-state classes, LABKI-LOGIN / LABKI-THEME-TOGGLE nav elements). Vector and Citizen remain loaded; users can switch via Special:Preferences. Existing users with a saved skin preference are unaffected.

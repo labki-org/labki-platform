@@ -28,6 +28,14 @@ services:
       # Pass through from host env so smoke-test.sh can drive enabled/disabled
       # modes; defaults to 0 (extensions loaded) for normal dev use.
       MW_DISABLE_PLATFORM_EXTENSIONS: ${MW_DISABLE_PLATFORM_EXTENSIONS:-0}
+    volumes:
+      # Live-mount chrome resources so labki-tweeki.{js,css} edits flow
+      # without an image rebuild. Mount the three subdirs the Dockerfile
+      # COPYs in (assets/, styles/, scripts/) — NOT the parent resources/,
+      # which would shadow MediaWiki core's own resources/Resources.php.
+      - ../resources/assets:/var/www/html/resources/assets
+      - ../resources/styles:/var/www/html/resources/styles
+      - ../resources/scripts:/var/www/html/resources/scripts
     # volumes:
     #   - ../mediawiki:/opt/labki/mediawiki
     #   - ../../MyExtension:/var/www/html/extensions/MyExtension
