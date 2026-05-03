@@ -282,8 +282,12 @@ footer.footer a,
    Tweeki renders #sidebar-right inside a Bootstrap row alongside
    #maincontentwrapper. labki-tweeki.js injects a `.sidebar-toggle`
    button anchored to the viewport's left edge; clicking it toggles
-   `body.sidebar-collapsed`, which animates the sidebar shut and
-   gives the content row full width.
+   `html.sidebar-collapsed`, which animates the sidebar shut and
+   gives the content row full width. The class is set on <html>
+   (not <body>) so the inline <head> bootstrap script in
+   skins.platform.php can apply it from localStorage BEFORE paint —
+   without that, users with a previously-collapsed sidebar would see
+   it render expanded and then animate shut on every page load.
 
    The sidebar is also visually relocated to the LEFT of content via
    flex `order` — this matches the reading-order convention of
@@ -310,7 +314,7 @@ footer.footer a,
 	transition: flex-basis 0.25s ease, max-width 0.25s ease;
 }
 
-body.sidebar-collapsed #sidebar-right {
+html.sidebar-collapsed #sidebar-right {
 	flex: 0 0 0 !important;
 	max-width: 0 !important;
 	padding-left: 0 !important;
@@ -320,7 +324,7 @@ body.sidebar-collapsed #sidebar-right {
 	opacity: 0;
 }
 
-body.sidebar-collapsed #maincontentwrapper {
+html.sidebar-collapsed #maincontentwrapper {
 	flex: 0 0 100% !important;
 	max-width: 100% !important;
 }
@@ -387,7 +391,7 @@ body.sidebar-collapsed #maincontentwrapper {
 
 /* Open: chevron points left ("close me").
    Collapsed: chevron points right ("pull me out"). */
-body.sidebar-collapsed .sidebar-toggle svg {
+html.sidebar-collapsed .sidebar-toggle svg {
 	transform: rotate(180deg);
 }
 
@@ -430,7 +434,13 @@ body.sidebar-collapsed .sidebar-toggle svg {
 	to { visibility: visible; }
 }
 
-#sidebar-right :is(#p-cactions, #p-views, .tweeki-cactions) {
+/* `.btn-group` covers Tweeki's standard EDIT-EXT wrapper (Tweeki's
+   tweeki-sidebar-right-wrapperclass message defaults to "btn-group
+   mb-1"). The MediaWiki-standard #p-cactions / #p-views IDs cover
+   non-Tweeki layouts. We deliberately don't include `.dropdown` —
+   Tweeki's TOC also carries that class, and hiding it would blank
+   the scroll-spy panel. */
+#sidebar-right :is(#p-cactions, #p-views, .tweeki-cactions, .btn-group) {
 	visibility: hidden;
 	animation: labki-page-actions-reveal 0s 1s forwards;
 }

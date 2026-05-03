@@ -165,8 +165,14 @@
 			return;
 		}
 
+		// The class lives on <html> rather than <body> so the inline
+		// <head> bootstrap script in skins.platform.php can apply it
+		// before paint. By the time we run, that script has likely
+		// already set the class — classList.add is idempotent, so the
+		// guard below is just for browsers without localStorage support.
+		var html = document.documentElement;
 		if ( readSidebarCollapsed() ) {
-			document.body.classList.add( 'sidebar-collapsed' );
+			html.classList.add( 'sidebar-collapsed' );
 		}
 
 		var btn = document.createElement( 'button' );
@@ -176,12 +182,12 @@
 		btn.setAttribute( 'title', 'Toggle side panel' );
 		btn.setAttribute(
 			'aria-expanded',
-			document.body.classList.contains( 'sidebar-collapsed' ) ? 'false' : 'true'
+			html.classList.contains( 'sidebar-collapsed' ) ? 'false' : 'true'
 		);
 		btn.appendChild( buildSidebarChevron() );
 
 		btn.addEventListener( 'click', function () {
-			var collapsed = document.body.classList.toggle( 'sidebar-collapsed' );
+			var collapsed = html.classList.toggle( 'sidebar-collapsed' );
 			btn.setAttribute( 'aria-expanded', collapsed ? 'false' : 'true' );
 			writeSidebarCollapsed( collapsed );
 		} );
@@ -191,15 +197,18 @@
 
 	// === Page actions relocation ================================
 	// Find the action-button cluster (Edit + dropdown) inside the
-	// sidebar. Tweeki wraps page actions in different elements
-	// depending on config; try a sequence of likely selectors.
+	// sidebar. Tweeki wraps the EDIT-EXT element in `btn-group`
+	// (per the tweeki-sidebar-right-wrapperclass message); the
+	// MediaWiki-standard #p-cactions / #p-views IDs cover non-Tweeki
+	// layouts. We deliberately don't fall back to `.dropdown` —
+	// Tweeki's TOC also uses that class, and grabbing it would
+	// relocate the scroll-spy panel by accident.
 	function findActionGroup( sidebar ) {
 		var selectors = [
 			'#p-cactions',
 			'#p-views',
 			'.tweeki-cactions',
-			'.btn-group',
-			'.dropdown'
+			'.btn-group'
 		];
 		for ( var i = 0; i < selectors.length; i++ ) {
 			var match = sidebar.querySelector( selectors[ i ] );

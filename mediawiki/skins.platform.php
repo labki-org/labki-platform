@@ -193,26 +193,32 @@ $wgHooks['SkinTemplateNavigation::Universal'][] = static function ( $sktemplate,
     }
 };
 
-// Light/dark theme toggle. The actual theme switch is driven by JS in
-// labki-tweeki.js (toggles `<html data-bs-theme>` and persists the
-// choice in localStorage). The button starts with a moon icon; the
-// shim swaps to a sun when dark mode is active. Bootstrap 5.3 styles
-// most components via `data-bs-theme`; the labki-tweeki.css overrides
-// the `--labki-*` palette under `[data-bs-theme="dark"]`.
+// Inline <head> bootstrap that applies persisted UI state synchronously
+// before paint. Two pieces of state, both keyed in localStorage and
+// mirrored on <html>:
 //
-// Inject a tiny <script> at the top of <head> that applies the stored
-// theme synchronously before paint, so users with dark preference
-// don't see a flash of light content while ResourceLoader catches up.
+//   * Theme (data-bs-theme) — the actual toggle is in labki-tweeki.js;
+//     this just avoids a flash of light content for users with dark
+//     preference while ResourceLoader catches up.
+//   * Sidebar collapse state (html.sidebar-collapsed) — without this,
+//     users with a previously-collapsed sidebar would see it render
+//     expanded, then animate shut once labki-tweeki.js runs. Setting
+//     the class on <html> (not <body>) is what lets us do this in a
+//     head script — <body> doesn't exist yet at this point.
 $wgHooks['BeforePageDisplay'][] = static function ( $out, $skin ) {
     if ( strtolower( $skin->getSkinName() ) !== 'tweeki' ) {
         return;
     }
     $out->addHeadItem(
-        'labki-theme-init',
-        "<script>(function(){try{var t=localStorage.getItem('labki-theme');"
+        'labki-ui-state-init',
+        "<script>(function(){try{"
+        . "var t=localStorage.getItem('labki-theme');"
         . "if(!t&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches){t='dark';}"
-        . "if(t==='dark'){document.documentElement.setAttribute('data-bs-theme','dark');}}"
-        . "catch(e){}})();</script>"
+        . "if(t==='dark'){document.documentElement.setAttribute('data-bs-theme','dark');}"
+        . "if(localStorage.getItem('labki.sidebarCollapsed')==='true'){"
+        . "document.documentElement.classList.add('sidebar-collapsed');"
+        . "}"
+        . "}catch(e){}})();</script>"
     );
 };
 $wgTweekiSkinNavigationalElements['LABKI-THEME-TOGGLE'] = function ( $skin, $context ) {
