@@ -19,7 +19,11 @@
  * 4. Page actions relocation. Lift the action-button cluster (Edit,
  *    History, …) out of #sidebar-right and re-anchor it at the
  *    top-right of the content card so it stays visible when the
- *    sidebar is collapsed and on narrow windows. Styles in
+ *    sidebar is collapsed and on narrow windows. Skipped under
+ *    VisualEditor (`?veaction=edit`), whose own Save button claims
+ *    the same top-right slot — relocating ours would overlap it.
+ *    Edit-source (action=edit) and Edit-with-form (Special:FormEdit)
+ *    use a different layout and are unaffected. Styles in
  *    labki-tweeki.css section "Page actions relocation".
  *
  * 5. Timestamp localization. Convert SMW-rendered UTC ISO timestamps
@@ -219,9 +223,52 @@
 		return null;
 	}
 
+	// VisualEditor renders its own Save button at the top-right of the
+	// content card — exactly where we'd anchor `.page-actions`. Two
+	// activation paths to detect:
+	//   1. Direct nav with `?veaction=edit` in the URL — we skip the
+	//      relocation entirely so nothing lands in VE's slot.
+	//   2. Inline activation from a click — VE fires the public
+	//      `mw.hook('ve.activationComplete')` event. We listen for it
+	//      and toggle our own `labki-ve-active` class on <html>, which
+	//      a CSS rule uses to hide the already-relocated cluster.
+	// We deliberately use the mw.hook API instead of guessing at VE's
+	// internal `ve-activated` / `ve-active` body classes — those have
+	// shifted across VE versions and skins, so class-sniffing breaks
+	// silently while the hook contract is stable.
+	function isVisualEditorOnInitialLoad() {
+		try {
+			var params = new URLSearchParams( window.location.search );
+			return params.get( 'veaction' ) === 'edit';
+		} catch ( e ) {
+			return false;
+		}
+	}
+
+	function setVisualEditorActive( active ) {
+		document.documentElement.classList.toggle( 'labki-ve-active', !!active );
+	}
+
+	function watchVisualEditor() {
+		if ( isVisualEditorOnInitialLoad() ) {
+			setVisualEditorActive( true );
+		}
+		if ( typeof mw !== 'undefined' && typeof mw.hook === 'function' ) {
+			mw.hook( 've.activationComplete' ).add( function () {
+				setVisualEditorActive( true );
+			} );
+			mw.hook( 've.deactivationComplete' ).add( function () {
+				setVisualEditorActive( false );
+			} );
+		}
+	}
+
 	function relocatePageActions() {
 		var sidebar = document.getElementById( 'sidebar-right' );
 		if ( !sidebar ) {
+			return;
+		}
+		if ( isVisualEditorOnInitialLoad() ) {
 			return;
 		}
 		var group = findActionGroup( sidebar );
@@ -389,6 +436,7 @@
 		relocatePageActions();
 		installSidebarToggle();
 		localizeTimestamps();
+		watchVisualEditor();
 
 		if ( !mw.user.isAnon() ) {
 			refreshBadges();

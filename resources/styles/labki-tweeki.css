@@ -451,6 +451,25 @@ html.sidebar-collapsed .sidebar-toggle svg {
 	padding-right: 110px;
 }
 
+/* Hide the relocated cluster while VisualEditor is active — VE's own
+   Save button claims the same top-right slot. relocatePageActions()
+   skips when VE is reached via `?veaction=edit`; this rule covers
+   inline activation, where labki-tweeki.js listens for the public
+   `mw.hook('ve.activationComplete')` event and toggles
+   `labki-ve-active` on <html>. We use our own class (rather than
+   VE's internal `ve-activated` / `ve-active`) because those move
+   between <html> and <body> across VE versions and skins. The
+   #firstHeading rule restores the heading's width once .page-actions
+   is gone, so the title doesn't appear indented under VE. */
+html.labki-ve-active .page-actions {
+	display: none;
+}
+
+html.labki-ve-active .mw-body #firstHeading,
+html.labki-ve-active #content #firstHeading {
+	padding-right: 0;
+}
+
 @media (max-width: 600px) {
 	.page-actions {
 		position: static !important;
