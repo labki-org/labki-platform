@@ -5,8 +5,10 @@
  *
  * 1. Light/dark theme toggle. Bootstrap 5.3 styles components based
  *    on `<html data-bs-theme>`; we set it from localStorage on first
- *    paint, then swap on click of the navbar toggle button. Falls
- *    back to `prefers-color-scheme` when no preference is stored.
+ *    paint, then swap on click of the navbar toggle button. Defaults
+ *    to light when no preference is stored — we deliberately ignore
+ *    `prefers-color-scheme` so the wiki has a single canonical first-
+ *    visit appearance regardless of the visitor's OS theme.
  *
  * 2. Tag <html> with `is-anon` or `is-logged-in` so per-wiki CSS can
  *    render login-conditional UI without a DOM round-trip.
@@ -72,14 +74,7 @@
 	}
 
 	function preferredTheme() {
-		var stored = readStoredTheme();
-		if ( stored === 'light' || stored === 'dark' ) {
-			return stored;
-		}
-		if ( window.matchMedia && window.matchMedia( '(prefers-color-scheme: dark)' ).matches ) {
-			return 'dark';
-		}
-		return 'light';
+		return readStoredTheme() === 'dark' ? 'dark' : 'light';
 	}
 
 	function applyTheme( theme ) {
@@ -161,12 +156,55 @@
 		return sidebar.textContent.trim() !== '';
 	}
 
-	// Hide the sidebar via .sidebar-empty without animating from full
-	// width to zero on the initial paint. The forced reflow snapshots
-	// the no-transition computed state so dropping the class on the
-	// next frame doesn't trigger the default transition between frames.
-	function hideEmptySidebar( html ) {
-		html.classList.add( 'sidebar-no-transition', 'sidebar-empty' );
+	// Per-URL emptiness cache. The inline <head> bootstrap reads this
+	// to decide whether to pre-apply `sidebar-empty` before paint —
+	// it's a self-correcting backstop for the server-side TOC count,
+	// which can be wrong when Tweeki's scroll-spy doesn't render the
+	// TOC despite 4+ sections, or when a portal we didn't predict
+	// pushes content into a sidebar the server thought was empty.
+	// First visit may flash; subsequent visits don't.
+	var SIDEBAR_EMPTY_CACHE_KEY = 'labki.sidebarEmptyCache';
+
+	function writeSidebarEmptyCache( isEmpty ) {
+		try {
+			var key = window.location.pathname + window.location.search;
+			var raw = localStorage.getItem( SIDEBAR_EMPTY_CACHE_KEY );
+			var map = {};
+			if ( raw ) {
+				try {
+					var parsed = JSON.parse( raw );
+					if ( parsed && typeof parsed === 'object' ) {
+						map = parsed;
+					}
+				} catch ( e ) {
+					// Corrupt cache; reset.
+				}
+			}
+			map[ key ] = isEmpty ? 'empty' : 'filled';
+			localStorage.setItem( SIDEBAR_EMPTY_CACHE_KEY, JSON.stringify( map ) );
+		} catch ( e ) {
+			// localStorage unavailable; non-fatal.
+		}
+	}
+
+	// Toggle .sidebar-empty without animating between full and zero
+	// width. Used for both directions:
+	//   * hide — the sidebar painted visible but turned out empty
+	//     (server didn't pre-apply, JS confirmed empty post-paint).
+	//   * reveal — the server pre-applied `sidebar-empty` but content
+	//     materialized (e.g., a portal entry we didn't predict, or
+	//     Tweeki's TOC populated late on a heading-bearing page that
+	//     somehow slipped past the server check).
+	// The forced reflow snapshots the no-transition computed state so
+	// dropping the class on the next frame doesn't trigger the default
+	// transition between frames. No-op when the target state is already
+	// in effect, so callers can invoke unconditionally.
+	function setSidebarEmpty( html, empty ) {
+		if ( html.classList.contains( 'sidebar-empty' ) === empty ) {
+			return;
+		}
+		html.classList.add( 'sidebar-no-transition' );
+		html.classList.toggle( 'sidebar-empty', empty );
 		// eslint-disable-next-line no-unused-expressions
 		document.body.offsetWidth;
 		requestAnimationFrame( function () {
@@ -180,8 +218,8 @@
 			return;
 		}
 
-		// The class lives on <html> rather than <body> so the inline
-		// <head> bootstrap script in skins.platform.php can apply it
+		// The collapsed class lives on <html> rather than <body> so the
+		// inline <head> bootstrap in skins.platform.php can apply it
 		// before paint. By the time we run, that script has likely
 		// already set the class — classList.add is idempotent, so the
 		// guard below is just for browsers without localStorage support.
@@ -191,8 +229,6 @@
 		}
 
 		function installButton() {
-			html.classList.remove( 'sidebar-empty' );
-
 			var btn = document.createElement( 'button' );
 			btn.type = 'button';
 			btn.className = 'sidebar-toggle';
@@ -214,21 +250,33 @@
 		}
 
 		if ( sidebarHasContent( sidebar ) ) {
+			setSidebarEmpty( html, false );
+			writeSidebarEmptyCache( false );
 			installButton();
 			return;
 		}
 
-		// No content yet — Tweeki's scroll-spy TOC populates client-side
-		// after this script runs. Hide the empty panel and watch for
-		// content to arrive; if it does, reveal the panel and install
-		// the toggle. If it doesn't, the panel stays hidden.
-		hideEmptySidebar( html );
+		// No content yet. Two paths converge here:
+		//   * Inline bootstrap pre-applied `sidebar-empty` (server
+		//     TOC count or cached prior visit said "empty") — class
+		//     is already on <html>, so this is a no-op.
+		//   * Bootstrap didn't pre-apply — apply now. The reflow
+		//     trick suppresses the visible-to-hidden animation.
+		// Then watch for surprise content (Tweeki's scroll-spy TOC
+		// populates client-side after this script runs, and other
+		// extensions can inject sidebar entries). If it arrives,
+		// reveal silently, update the cache so the next visit
+		// doesn't pre-hide, and install the toggle.
+		setSidebarEmpty( html, true );
+		writeSidebarEmptyCache( true );
 		if ( typeof MutationObserver !== 'function' ) {
 			return;
 		}
 		var observer = new MutationObserver( function () {
 			if ( sidebarHasContent( sidebar ) ) {
 				observer.disconnect();
+				setSidebarEmpty( html, false );
+				writeSidebarEmptyCache( false );
 				installButton();
 			}
 		} );
@@ -394,18 +442,38 @@
 		message: 'pt-notifications-notice'
 	};
 
+	// Locate the user dropdown's toggle so we can stamp the aggregate
+	// unread badge on it. We anchor on a known PERSONAL-menu item id
+	// (pt-notifications-* and pt-userpage live inside the user
+	// dropdown) and walk up to the enclosing Bootstrap `.dropdown`,
+	// rather than picking the first `.dropdown-toggle` in the navbar.
+	// The earlier "first toggle in .nav/.navbar-nav" heuristic matched
+	// any dropdown in MediaWiki:Tweeki-navbar-left too, so the badge
+	// landed on the leftmost navbar-left entry instead of the user.
 	function findUserToggle() {
-		var navbar = document.getElementById( 'mw-navigation' );
-		if ( !navbar ) {
-			return null;
-		}
-		var toggles = navbar.querySelectorAll( '.dropdown-toggle' );
-		for ( var i = 0; i < toggles.length; i++ ) {
-			if ( toggles[ i ].closest( '.navbar-right, .ms-auto, .nav, .navbar-nav' ) ) {
-				return toggles[ i ];
+		var anchorIds = [
+			'pt-notifications-alert',
+			'pt-notifications-notice',
+			'pt-userpage',
+			'pt-mytalk',
+			'pt-preferences',
+			'pt-logout'
+		];
+		for ( var i = 0; i < anchorIds.length; i++ ) {
+			var anchor = document.getElementById( anchorIds[ i ] );
+			if ( !anchor ) {
+				continue;
+			}
+			var dropdown = anchor.closest( '.dropdown' );
+			if ( !dropdown ) {
+				continue;
+			}
+			var toggle = dropdown.querySelector( ':scope > .dropdown-toggle' );
+			if ( toggle ) {
+				return toggle;
 			}
 		}
-		return toggles[ 0 ] || null;
+		return null;
 	}
 
 	function setBadge( el, count ) {

@@ -200,31 +200,77 @@ $wgHooks['SkinTemplateNavigation::Universal'][] = static function ( $sktemplate,
     }
 };
 
-// Inline <head> bootstrap that applies persisted UI state synchronously
-// before paint. Two pieces of state, both keyed in localStorage and
-// mirrored on <html>:
+// Inline <head> bootstrap that applies UI state synchronously before
+// paint. Three pieces of state, all mirrored on <html>:
 //
-//   * Theme (data-bs-theme) — the actual toggle is in labki-tweeki.js;
-//     this just avoids a flash of light content for users with dark
-//     preference while ResourceLoader catches up.
-//   * Sidebar collapse state (html.sidebar-collapsed) — without this,
-//     users with a previously-collapsed sidebar would see it render
-//     expanded, then animate shut once labki-tweeki.js runs. Setting
-//     the class on <html> (not <body>) is what lets us do this in a
-//     head script — <body> doesn't exist yet at this point.
+//   * Theme (data-bs-theme) — pulled from localStorage. Default is
+//     light; we deliberately ignore `prefers-color-scheme` so first-
+//     visit appearance is a single canonical look regardless of OS.
+//   * Sidebar collapse state (html.sidebar-collapsed) — pulled from
+//     localStorage. Without this, users with a previously-collapsed
+//     sidebar would see it render expanded and animate shut once
+//     labki-tweeki.js runs.
+//   * Sidebar emptiness (html.sidebar-empty) — server-detected via
+//     the parser's TOC data. Tweeki's right sidebar carries the
+//     scroll-spy TOC plus the action cluster; labki-tweeki.js lifts
+//     the action cluster out, leaving only the TOC. When the page
+//     produces no headings the TOC stays empty and the panel renders
+//     with no content. Pre-applying `sidebar-empty` here hides the
+//     panel before first paint and eliminates the visible "expanded
+//     then collapsed" jump on heading-less pages (Main_Page being
+//     the most common).
+//
+// Setting the class on <html> (not <body>) is what lets us do this
+// in a head script — <body> doesn't exist yet at this point.
 $wgHooks['BeforePageDisplay'][] = static function ( $out, $skin ) {
     if ( strtolower( $skin->getSkinName() ) !== 'tweeki' ) {
         return;
     }
+
+    // TOC-empty detection. We pre-apply `sidebar-empty` when we
+    // expect the right-sidebar TOC to render empty so the panel is
+    // hidden before first paint and there's no expanded→collapsed
+    // jump on heading-less pages.
+    //
+    // Threshold: MediaWiki only renders a TOC for pages with at
+    // least 4 sections (controlled by `__NOTOC__` / `__FORCETOC__`
+    // / `__TOC__` magic words and core's count check). With 1-3
+    // sections, getTOCData() returns sections data but core skips
+    // rendering — Tweeki's scroll-spy then has nothing to copy and
+    // #tweekiTOC stays empty. Treating <4 sections as empty
+    // matches reality. Edge case: forced `__TOC__` on a 1-section
+    // page renders a TOC; we'd start that page collapsed and the
+    // JS would silently reveal — a one-frame snap is acceptable.
+    //
+    // Null TOCData (no parser output, e.g., special pages) is also
+    // treated as empty.
+    $tocData = $out->getTOCData();
+    $sectionCount = $tocData ? count( $tocData->getSections() ) : 0;
+    $sidebarLikelyEmpty = ( $sectionCount < 4 );
+
+    // Per-URL emptiness cache as a self-correcting backstop. Server-
+    // side TOC count is a heuristic — Tweeki's scroll-spy can wind
+    // up empty even when the page has 1-3 headings, and full when
+    // a portal injects content we didn't predict. labki-tweeki.js
+    // writes the post-paint truth to localStorage keyed by path,
+    // and this script reads it next visit. The cache wins over the
+    // server hint when present, so any first-visit miss self-heals
+    // on the second visit.
+    $serverEmpty = $sidebarLikelyEmpty ? 'true' : 'false';
+
     $out->addHeadItem(
         'labki-ui-state-init',
         "<script>(function(){try{"
-        . "var t=localStorage.getItem('labki-theme');"
-        . "if(!t&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches){t='dark';}"
-        . "if(t==='dark'){document.documentElement.setAttribute('data-bs-theme','dark');}"
+        . "if(localStorage.getItem('labki-theme')==='dark'){"
+        . "document.documentElement.setAttribute('data-bs-theme','dark');"
+        . "}"
         . "if(localStorage.getItem('labki.sidebarCollapsed')==='true'){"
         . "document.documentElement.classList.add('sidebar-collapsed');"
         . "}"
+        . "var apply=$serverEmpty,key=window.location.pathname+window.location.search;"
+        . "var raw=localStorage.getItem('labki.sidebarEmptyCache');"
+        . "if(raw){try{var m=JSON.parse(raw);if(m&&key in m){apply=m[key]==='empty';}}catch(e){}}"
+        . "if(apply){document.documentElement.classList.add('sidebar-empty');}"
         . "}catch(e){}})();</script>"
     );
 };
