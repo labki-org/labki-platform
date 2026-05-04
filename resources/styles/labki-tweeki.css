@@ -314,7 +314,16 @@ footer.footer a,
 	transition: flex-basis 0.25s ease, max-width 0.25s ease;
 }
 
-html.sidebar-collapsed #sidebar-right {
+/* Two paths to a hidden sidebar:
+   * .sidebar-collapsed — user-toggled via the pull-tab; persisted in
+     localStorage; chevron rotates to indicate state.
+   * .sidebar-empty — script-detected when #sidebar-right has no
+     rendered content (e.g., heading-less page where Tweeki's TOC
+     never populates); no toggle is installed in this case.
+   .sidebar-no-transition is a one-frame suppressor used by the JS to
+   apply .sidebar-empty without animating from full width to zero. */
+html.sidebar-collapsed #sidebar-right,
+html.sidebar-empty #sidebar-right {
 	flex: 0 0 0 !important;
 	max-width: 0 !important;
 	padding-left: 0 !important;
@@ -324,9 +333,15 @@ html.sidebar-collapsed #sidebar-right {
 	opacity: 0;
 }
 
-html.sidebar-collapsed #maincontentwrapper {
+html.sidebar-collapsed #maincontentwrapper,
+html.sidebar-empty #maincontentwrapper {
 	flex: 0 0 100% !important;
 	max-width: 100% !important;
+}
+
+html.sidebar-no-transition #sidebar-right,
+html.sidebar-no-transition #maincontentwrapper {
+	transition: none !important;
 }
 
 /* Drawer pull-tab attached to the viewport's left edge, vertically

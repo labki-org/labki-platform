@@ -153,19 +153,35 @@
 	// True when #sidebar-right has rendered content worth collapsing.
 	// Called after relocatePageActions(), so the action cluster has
 	// already been lifted out — what remains is TOC, portals, etc.
-	// Structural check (children.length) rather than textContent: Tweeki
-	// renders the scroll-spy TOC as an empty <div id="tweekiTOC"> that
-	// gets populated client-side AFTER our init runs, so a text-based
-	// check would skip the toggle on every page with a yet-to-be-filled
-	// TOC. If the sidebar's only content was the action cluster,
-	// relocatePageActions has emptied it and we correctly skip.
+	// textContent is the truthful proxy: meaningful sidebar entries
+	// (TOC links, portal items) all carry visible text. children.length
+	// is misleading because Tweeki injects an empty <div id="tweekiTOC">
+	// stub that's always present even on heading-less pages.
 	function sidebarHasContent( sidebar ) {
-		return sidebar.children.length > 0;
+		return sidebar.textContent.trim() !== '';
+	}
+
+	// Suppress the 250ms shrink animation on the initial empty paint —
+	// without this, users on heading-less pages would see the sidebar
+	// briefly render full-width, then collapse, after our script runs.
+	function applySidebarEmpty( html, empty ) {
+		if ( empty ) {
+			html.classList.add( 'sidebar-no-transition', 'sidebar-empty' );
+			// Force a reflow so the no-transition rule applies before the
+			// next paint, then drop the suppressor for any later changes.
+			// eslint-disable-next-line no-unused-expressions
+			document.body.offsetWidth;
+			requestAnimationFrame( function () {
+				html.classList.remove( 'sidebar-no-transition' );
+			} );
+		} else {
+			html.classList.remove( 'sidebar-empty' );
+		}
 	}
 
 	function installSidebarToggle() {
 		var sidebar = document.getElementById( 'sidebar-right' );
-		if ( !sidebar || !sidebarHasContent( sidebar ) ) {
+		if ( !sidebar ) {
 			return;
 		}
 
@@ -179,24 +195,58 @@
 			html.classList.add( 'sidebar-collapsed' );
 		}
 
-		var btn = document.createElement( 'button' );
-		btn.type = 'button';
-		btn.className = 'sidebar-toggle';
-		btn.setAttribute( 'aria-label', 'Toggle side panel' );
-		btn.setAttribute( 'title', 'Toggle side panel' );
-		btn.setAttribute(
-			'aria-expanded',
-			html.classList.contains( 'sidebar-collapsed' ) ? 'false' : 'true'
-		);
-		btn.appendChild( buildSidebarChevron() );
+		var installed = false;
+		function ensureButton() {
+			if ( installed ) {
+				return;
+			}
+			installed = true;
+			applySidebarEmpty( html, false );
 
-		btn.addEventListener( 'click', function () {
-			var collapsed = html.classList.toggle( 'sidebar-collapsed' );
-			btn.setAttribute( 'aria-expanded', collapsed ? 'false' : 'true' );
-			writeSidebarCollapsed( collapsed );
+			var btn = document.createElement( 'button' );
+			btn.type = 'button';
+			btn.className = 'sidebar-toggle';
+			btn.setAttribute( 'aria-label', 'Toggle side panel' );
+			btn.setAttribute( 'title', 'Toggle side panel' );
+			btn.setAttribute(
+				'aria-expanded',
+				html.classList.contains( 'sidebar-collapsed' ) ? 'false' : 'true'
+			);
+			btn.appendChild( buildSidebarChevron() );
+
+			btn.addEventListener( 'click', function () {
+				var collapsed = html.classList.toggle( 'sidebar-collapsed' );
+				btn.setAttribute( 'aria-expanded', collapsed ? 'false' : 'true' );
+				writeSidebarCollapsed( collapsed );
+			} );
+
+			document.body.appendChild( btn );
+		}
+
+		if ( sidebarHasContent( sidebar ) ) {
+			ensureButton();
+			return;
+		}
+
+		// No content yet — Tweeki's scroll-spy TOC populates client-side
+		// after this script runs. Hide the empty panel and watch for
+		// content to arrive; if it does, reveal the panel and install
+		// the toggle. If it doesn't, the panel stays hidden.
+		applySidebarEmpty( html, true );
+		if ( typeof MutationObserver !== 'function' ) {
+			return;
+		}
+		var observer = new MutationObserver( function () {
+			if ( sidebarHasContent( sidebar ) ) {
+				observer.disconnect();
+				ensureButton();
+			}
 		} );
-
-		document.body.appendChild( btn );
+		observer.observe( sidebar, {
+			childList:     true,
+			subtree:       true,
+			characterData: true
+		} );
 	}
 
 	// === Page actions relocation ================================
