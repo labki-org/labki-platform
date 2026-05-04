@@ -153,19 +153,30 @@
 	// True when #sidebar-right has rendered content worth collapsing.
 	// Called after relocatePageActions(), so the action cluster has
 	// already been lifted out — what remains is TOC, portals, etc.
-	// Structural check (children.length) rather than textContent: Tweeki
-	// renders the scroll-spy TOC as an empty <div id="tweekiTOC"> that
-	// gets populated client-side AFTER our init runs, so a text-based
-	// check would skip the toggle on every page with a yet-to-be-filled
-	// TOC. If the sidebar's only content was the action cluster,
-	// relocatePageActions has emptied it and we correctly skip.
+	// textContent is the truthful proxy: meaningful sidebar entries
+	// (TOC links, portal items) all carry visible text. children.length
+	// is misleading because Tweeki injects an empty <div id="tweekiTOC">
+	// stub that's always present even on heading-less pages.
 	function sidebarHasContent( sidebar ) {
-		return sidebar.children.length > 0;
+		return sidebar.textContent.trim() !== '';
+	}
+
+	// Hide the sidebar via .sidebar-empty without animating from full
+	// width to zero on the initial paint. The forced reflow snapshots
+	// the no-transition computed state so dropping the class on the
+	// next frame doesn't trigger the default transition between frames.
+	function hideEmptySidebar( html ) {
+		html.classList.add( 'sidebar-no-transition', 'sidebar-empty' );
+		// eslint-disable-next-line no-unused-expressions
+		document.body.offsetWidth;
+		requestAnimationFrame( function () {
+			html.classList.remove( 'sidebar-no-transition' );
+		} );
 	}
 
 	function installSidebarToggle() {
 		var sidebar = document.getElementById( 'sidebar-right' );
-		if ( !sidebar || !sidebarHasContent( sidebar ) ) {
+		if ( !sidebar ) {
 			return;
 		}
 
@@ -179,24 +190,49 @@
 			html.classList.add( 'sidebar-collapsed' );
 		}
 
-		var btn = document.createElement( 'button' );
-		btn.type = 'button';
-		btn.className = 'sidebar-toggle';
-		btn.setAttribute( 'aria-label', 'Toggle side panel' );
-		btn.setAttribute( 'title', 'Toggle side panel' );
-		btn.setAttribute(
-			'aria-expanded',
-			html.classList.contains( 'sidebar-collapsed' ) ? 'false' : 'true'
-		);
-		btn.appendChild( buildSidebarChevron() );
+		function installButton() {
+			html.classList.remove( 'sidebar-empty' );
 
-		btn.addEventListener( 'click', function () {
-			var collapsed = html.classList.toggle( 'sidebar-collapsed' );
-			btn.setAttribute( 'aria-expanded', collapsed ? 'false' : 'true' );
-			writeSidebarCollapsed( collapsed );
+			var btn = document.createElement( 'button' );
+			btn.type = 'button';
+			btn.className = 'sidebar-toggle';
+			btn.setAttribute( 'aria-label', 'Toggle side panel' );
+			btn.setAttribute( 'title', 'Toggle side panel' );
+			btn.setAttribute(
+				'aria-expanded',
+				html.classList.contains( 'sidebar-collapsed' ) ? 'false' : 'true'
+			);
+			btn.appendChild( buildSidebarChevron() );
+
+			btn.addEventListener( 'click', function () {
+				var collapsed = html.classList.toggle( 'sidebar-collapsed' );
+				btn.setAttribute( 'aria-expanded', collapsed ? 'false' : 'true' );
+				writeSidebarCollapsed( collapsed );
+			} );
+
+			document.body.appendChild( btn );
+		}
+
+		if ( sidebarHasContent( sidebar ) ) {
+			installButton();
+			return;
+		}
+
+		// No content yet — Tweeki's scroll-spy TOC populates client-side
+		// after this script runs. Hide the empty panel and watch for
+		// content to arrive; if it does, reveal the panel and install
+		// the toggle. If it doesn't, the panel stays hidden.
+		hideEmptySidebar( html );
+		if ( typeof MutationObserver !== 'function' ) {
+			return;
+		}
+		var observer = new MutationObserver( function () {
+			if ( sidebarHasContent( sidebar ) ) {
+				observer.disconnect();
+				installButton();
+			}
 		} );
-
-		document.body.appendChild( btn );
+		observer.observe( sidebar, { childList: true, subtree: true } );
 	}
 
 	// === Page actions relocation ================================
