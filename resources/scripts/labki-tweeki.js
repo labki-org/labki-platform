@@ -161,22 +161,17 @@
 		return sidebar.textContent.trim() !== '';
 	}
 
-	// Suppress the 250ms shrink animation on the initial empty paint —
-	// without this, users on heading-less pages would see the sidebar
-	// briefly render full-width, then collapse, after our script runs.
-	function applySidebarEmpty( html, empty ) {
-		if ( empty ) {
-			html.classList.add( 'sidebar-no-transition', 'sidebar-empty' );
-			// Force a reflow so the no-transition rule applies before the
-			// next paint, then drop the suppressor for any later changes.
-			// eslint-disable-next-line no-unused-expressions
-			document.body.offsetWidth;
-			requestAnimationFrame( function () {
-				html.classList.remove( 'sidebar-no-transition' );
-			} );
-		} else {
-			html.classList.remove( 'sidebar-empty' );
-		}
+	// Hide the sidebar via .sidebar-empty without animating from full
+	// width to zero on the initial paint. The forced reflow snapshots
+	// the no-transition computed state so dropping the class on the
+	// next frame doesn't trigger the default transition between frames.
+	function hideEmptySidebar( html ) {
+		html.classList.add( 'sidebar-no-transition', 'sidebar-empty' );
+		// eslint-disable-next-line no-unused-expressions
+		document.body.offsetWidth;
+		requestAnimationFrame( function () {
+			html.classList.remove( 'sidebar-no-transition' );
+		} );
 	}
 
 	function installSidebarToggle() {
@@ -195,13 +190,8 @@
 			html.classList.add( 'sidebar-collapsed' );
 		}
 
-		var installed = false;
-		function ensureButton() {
-			if ( installed ) {
-				return;
-			}
-			installed = true;
-			applySidebarEmpty( html, false );
+		function installButton() {
+			html.classList.remove( 'sidebar-empty' );
 
 			var btn = document.createElement( 'button' );
 			btn.type = 'button';
@@ -224,7 +214,7 @@
 		}
 
 		if ( sidebarHasContent( sidebar ) ) {
-			ensureButton();
+			installButton();
 			return;
 		}
 
@@ -232,21 +222,17 @@
 		// after this script runs. Hide the empty panel and watch for
 		// content to arrive; if it does, reveal the panel and install
 		// the toggle. If it doesn't, the panel stays hidden.
-		applySidebarEmpty( html, true );
+		hideEmptySidebar( html );
 		if ( typeof MutationObserver !== 'function' ) {
 			return;
 		}
 		var observer = new MutationObserver( function () {
 			if ( sidebarHasContent( sidebar ) ) {
 				observer.disconnect();
-				ensureButton();
+				installButton();
 			}
 		} );
-		observer.observe( sidebar, {
-			childList:     true,
-			subtree:       true,
-			characterData: true
-		} );
+		observer.observe( sidebar, { childList: true, subtree: true } );
 	}
 
 	// === Page actions relocation ================================
