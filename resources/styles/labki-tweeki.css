@@ -70,6 +70,42 @@
 	color: var(--labki-text-muted);
 }
 
+/* === Dark-mode form input contrast ===
+   MediaWiki's edit textarea (#wpTextbox1) carries .mw-editfont-*
+   but no .form-control, so Bootstrap 5.3's `--bs-body-bg`-based
+   dark styling never matches it — the textarea renders against
+   the browser's hardcoded white. Light text on white is
+   unreadable. We scope to #content so the navbar search keeps
+   Tweeki's own styling, and use !important because Tweeki's
+   compiled CSS module loads after ours; without it our color/bg
+   ties on specificity and Tweeki's `--bs-body-bg` (which adapts
+   for elements that DO carry .form-control) wins by cascade. */
+[data-bs-theme="dark"] #content :is(
+	textarea,
+	select,
+	input:not([type]),
+	input[type="text"],
+	input[type="search"],
+	input[type="url"],
+	input[type="email"],
+	input[type="password"],
+	input[type="number"],
+	input[type="tel"],
+	input[type="date"],
+	input[type="datetime-local"],
+	input[type="time"]
+) {
+	background-color: var(--labki-bg-subtle) !important;
+	color: var(--labki-text) !important;
+	border-color: var(--labki-border) !important;
+}
+
+[data-bs-theme="dark"] #content :is(textarea, select, input):focus {
+	background-color: var(--labki-surface) !important;
+	color: var(--labki-text) !important;
+	border-color: var(--labki-accent) !important;
+}
+
 /* === Theme toggle button === */
 /* Strip the default link underline / dropdown caret styling so the
    icon-only toggle reads as a button. */
@@ -276,6 +312,80 @@ footer.footer a,
 .toc {
 	background-color: var(--labki-bg-subtle);
 	border: 1px solid var(--labki-border);
+}
+
+/* Tweeki's scroll-spy TOC (#tweekiTOC) sits in #sidebar-right but
+   appears visually on the LEFT thanks to the flex `order` rules
+   below. Tweeki's compiled CSS hardcodes:
+     * `#toctitle h2 a { background-color: #e9ecef }` — the "to top"
+       pill stays a bright Bootstrap gray-200 in both themes.
+     * `#toc a { color: #999 }` and `#toc a.active { color: #000 }`
+       — gray inactive items, BLACK active item, both readable on
+       a white surface but unreadable on a dark one.
+   Tweeki's CSS module loads AFTER ours and uses identical-
+   specificity selectors (#tweekiTOC #toctitle h2 a), so cascade
+   ties go to Tweeki — !important is the only reliable way to
+   override the hardcoded vendor colors without rewriting every
+   selector to outscore Tweeki's. */
+#tweekiTOC {
+	color: var(--labki-text);
+}
+
+#tweekiTOC #toctitle,
+#tweekiTOC .toctitle {
+	background-color: transparent;
+	color: var(--labki-heading);
+	border-bottom: 1px solid var(--labki-border);
+	padding-bottom: 0.4rem;
+	margin-bottom: 0.5rem;
+}
+
+#tweekiTOC #toctitle h2,
+#tweekiTOC .toctitle h2 {
+	color: var(--labki-heading);
+	border-bottom: none;
+	padding-bottom: 0;
+	font-size: 0.95rem;
+	margin: 0;
+}
+
+/* "To top" link: bare <a> inside the toctitle h2 (no class). Tweeki
+   hardcodes its background to gray-200; replace with our subtle
+   surface token so it flips with [data-bs-theme]. */
+#tweekiTOC #toctitle h2 a,
+#tweekiTOC .toctitle h2 a {
+	background-color: var(--labki-bg-subtle) !important;
+	color: var(--labki-accent) !important;
+	font-size: 0.75rem;
+	font-weight: normal;
+	text-decoration: none;
+	border: 1px solid var(--labki-border);
+}
+
+#tweekiTOC #toctitle h2 a:hover,
+#tweekiTOC #toctitle h2 a:focus,
+#tweekiTOC .toctitle h2 a:hover,
+#tweekiTOC .toctitle h2 a:focus {
+	background-color: var(--labki-border) !important;
+	color: var(--labki-accent-hover) !important;
+	text-decoration: none;
+}
+
+/* Inactive scrollspy items: Tweeki sets `#toc a { color: #999 }`
+   which reads OK on light surface but is muddy on dark. Override
+   to our muted text token. */
+#tweekiTOC #toc a {
+	color: var(--labki-text-muted) !important;
+}
+
+/* Active scrollspy item: Tweeki sets `#toc a.active { color: #000 }`
+   — pure black is invisible against the dark TOC surface. Lift to
+   accent + bold so the current section reads in both themes. */
+#tweekiTOC #toc a.active,
+#tweekiTOC #toc a:hover,
+#tweekiTOC #toc a:focus {
+	color: var(--labki-accent) !important;
+	font-weight: 600;
 }
 
 /* === Right sidebar collapse drawer ===
