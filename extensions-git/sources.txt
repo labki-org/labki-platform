@@ -6,6 +6,6 @@ ConfirmAccount https://gerrit.wikimedia.org/r/mediawiki/extensions/ConfirmAccoun
 MWAssistant https://github.com/labki-org/MWAssistant.git main extension
 SemanticSchemas https://github.com/labki-org/SemanticSchemas.git feature/dispatcher-bakes-display-schema extension
 LabkiPageFormsInputs https://github.com/labki-org/LabkiPageFormsInputs.git main extension
-FilePermissions https://github.com/labki-org/FilePermissions.git main extension
+NSFileRepo https://gerrit.wikimedia.org/r/mediawiki/extensions/NSFileRepo.git REL1_44 extension
 Citizen https://github.com/StarCitizenTools/mediawiki-skins-Citizen.git v3.6.0 skin
 Tweeki https://github.com/thaider/Tweeki.git master skin
