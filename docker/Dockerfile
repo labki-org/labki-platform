@@ -37,6 +37,11 @@ COPY extensions-git/sources.txt /tmp/sources.txt
 COPY extensions-git/clone-extensions.sh /usr/local/bin/clone-extensions.sh
 RUN chmod +x /usr/local/bin/clone-extensions.sh && /usr/local/bin/clone-extensions.sh /tmp/sources.txt
 
+# NSFileRepo's nsfr_img_auth.php must live at the document root so MediaWiki's
+# img_auth rewrite can reach it. Copy (don't symlink) — PHP's __DIR__ resolves
+# through symlinks to the real path, defeating the relocation.
+RUN cp /var/www/html/extensions/NSFileRepo/nsfr_img_auth.php /var/www/html/nsfr_img_auth.php
+
 # Install platform Composer dependencies
 COPY composer/composer.platform.json /var/www/html/composer.local.json
 
