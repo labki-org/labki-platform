@@ -29,6 +29,13 @@
 	--color-surface-0-lightness: 22%;
 	--delta-lightness-surface:   2%;
 
+	/* Tint the dark surface lightly blue at the neutral hue so the
+	   page background reads as cohesive with the (already tinted)
+	   bg-subtle / border / text tokens, rather than as flat near-
+	   black against a blue-grey palette. Light-mode surface stays
+	   pure white from `.theme-base()`. */
+	--labki-surface: ~'oklch(var(--color-surface-0-lightness) 0.015 var(--color-neutral-hue))';
+
 	/* === Labki token overrides === */
 	--labki-primary:       ~'oklch(15% var(--color-primary-chroma) var(--color-primary-hue))';
 	--labki-primary-light: ~'oklch(22% var(--color-primary-chroma) var(--color-primary-hue))';
