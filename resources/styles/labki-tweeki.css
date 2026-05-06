@@ -251,14 +251,17 @@
 	padding-bottom: 0.25em;
 }
 
-/* === Links === */
-#content a:not(.btn),
+/* === Links ===
+   `:not(.new)` defers to MediaWiki's redlink styling (a.new is red).
+   Without it our `#content a` rule outscores `a.new` on specificity
+   and broken links render in our accent color. */
+#content a:not(.btn):not(.new),
 #mw-panel a {
 	color: var(--labki-accent);
 }
 
-#content a:not(.btn):hover,
-#content a:not(.btn):focus,
+#content a:not(.btn):not(.new):hover,
+#content a:not(.btn):not(.new):focus,
 #mw-panel a:hover,
 #mw-panel a:focus {
 	color: var(--labki-accent-hover);
@@ -268,6 +271,19 @@
 #content {
 	line-height: 1.7;
 	color: var(--labki-text);
+}
+
+/* === Blockquotes ===
+   Bootstrap 5's Reboot zeroes the browser default left margin on
+   <blockquote>, so without an explicit rule blockquotes render
+   indistinguishably from surrounding paragraphs. Restore a visible
+   indent + accent rail using theme tokens so it flips with dark mode. */
+#content blockquote {
+	margin: 1rem 0;
+	padding: 0.4rem 1rem;
+	border-left: 4px solid var(--labki-border);
+	color: var(--labki-text-muted);
+	font-style: italic;
 }
 
 /* === Tables === */

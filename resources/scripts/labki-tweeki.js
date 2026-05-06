@@ -28,11 +28,7 @@
  *    use a different layout and are unaffected. Styles in
  *    labki-tweeki.css section "Page actions relocation".
  *
- * 5. Timestamp localization. Convert SMW-rendered UTC ISO timestamps
- *    (semantic <time datetime="..."> elements and bare ISO strings
- *    in wikitext tables) to the viewer's locale via toLocaleString().
- *
- * 6. Echo notifications under Tweeki: notifications live inside the
+ * 5. Echo notifications under Tweeki: notifications live inside the
  *    user (PERSONAL) dropdown rather than as standalone navbar
  *    icons. Per-section counts get lost in transit (core's
  *    getPersonalToolsForMakeListItem moves `text` into links[0] and
@@ -371,70 +367,6 @@
 		contentBody.insertBefore( holder, contentBody.firstChild );
 	}
 
-	// === Timestamp localization =================================
-	// SMW's #-F[Y-m-d\TH:i:s\Z] format renders dates as raw UTC ISO
-	// strings, which read confusingly to viewers in other timezones.
-	// Convert to the viewer's locale via toLocaleString().
-	//
-	// Two paths:
-	//   1. Semantic <time datetime="..."> elements anywhere on the
-	//      page — preferred. Visible text is replaced; the datetime
-	//      attribute stays machine-readable.
-	//   2. Bare ISO strings inside any wikitext-rendered table cell
-	//      — backstop for legacy SMW table conventions. The regex
-	//      is strictly anchored, so false positives are not a real
-	//      concern.
-	// Idempotent via data-localized="true" marker.
-	function formatLocalDateTime( d ) {
-		return d.toLocaleString( undefined, {
-			year:         'numeric',
-			month:        'short',
-			day:          'numeric',
-			hour:         '2-digit',
-			minute:       '2-digit',
-			timeZoneName: 'short'
-		} );
-	}
-
-	function localizeTimestamps() {
-		var i, el, d, text;
-
-		var times = document.querySelectorAll( 'time[datetime]' );
-		for ( i = 0; i < times.length; i++ ) {
-			el = times[ i ];
-			if ( el.dataset.localized === 'true' ) {
-				continue;
-			}
-			d = new Date( el.getAttribute( 'datetime' ) );
-			if ( isNaN( d.getTime() ) ) {
-				continue;
-			}
-			el.textContent = formatLocalDateTime( d );
-			el.dataset.localized = 'true';
-		}
-
-		var iso = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
-		var cells = document.querySelectorAll(
-			'.mw-parser-output table td, .mw-parser-output table th'
-		);
-		for ( i = 0; i < cells.length; i++ ) {
-			el = cells[ i ];
-			if ( el.dataset.localized === 'true' ) {
-				continue;
-			}
-			text = el.textContent.trim();
-			if ( !iso.test( text ) ) {
-				continue;
-			}
-			d = new Date( text );
-			if ( isNaN( d.getTime() ) ) {
-				continue;
-			}
-			el.textContent = formatLocalDateTime( d );
-			el.dataset.localized = 'true';
-		}
-	}
-
 	// === Echo notification badges ================================
 	var POLL_INTERVAL_MS = 60 * 1000;
 	var SECTION_TO_PT_ID = {
@@ -539,7 +471,6 @@
 		// sidebar's only content, the toggle won't install.
 		relocatePageActions();
 		installSidebarToggle();
-		localizeTimestamps();
 		watchVisualEditor();
 
 		if ( !mw.user.isAnon() ) {
