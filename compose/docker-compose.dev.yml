@@ -29,15 +29,18 @@ services:
       # modes; defaults to 0 (extensions loaded) for normal dev use.
       MW_DISABLE_PLATFORM_EXTENSIONS: ${MW_DISABLE_PLATFORM_EXTENSIONS:-0}
     volumes:
-      # Live-mount chrome resources so labki-tweeki.{js,css} edits flow
+      # Live-mount chrome resources so labki-tweeki.{js,less} edits flow
       # without an image rebuild. Mount the three subdirs the Dockerfile
       # COPYs in (assets/, styles/, scripts/) — NOT the parent resources/,
       # which would shadow MediaWiki core's own resources/Resources.php.
       - ../resources/assets:/var/www/html/resources/assets
       - ../resources/styles:/var/www/html/resources/styles
       - ../resources/scripts:/var/www/html/resources/scripts
+      # Live-mount platform PHP config so changes to skins.platform.php /
+      # extensions.platform.php / LocalSettings.base.php take effect on
+      # touch (subject to PHP opcache mtime invalidation).
+      - ../mediawiki:/opt/labki/mediawiki
     # volumes:
-    #   - ../mediawiki:/opt/labki/mediawiki
     #   - ../../MyExtension:/var/www/html/extensions/MyExtension
     #   - ../../MySkin:/mw-user-skins/MySkin
     depends_on:

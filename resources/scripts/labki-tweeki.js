@@ -3,10 +3,11 @@
  *
  * Responsibilities:
  *
- * 1. Light/dark theme toggle. Bootstrap 5.3 styles components based
- *    on `<html data-bs-theme>`; we set it from localStorage on first
- *    paint, then swap on click of the navbar toggle button. Defaults
- *    to light when no preference is stored — we deliberately ignore
+ * 1. Light/dark theme toggle. The inline head-script in
+ *    skins.platform.php stamps `data-bs-theme` and
+ *    `skin-theme-clientpref-{day|night}` on <html> before paint; this
+ *    script just keeps both in sync on click. Defaults to light when
+ *    no preference is stored — we deliberately ignore
  *    `prefers-color-scheme` so the wiki has a single canonical first-
  *    visit appearance regardless of the visitor's OS theme.
  *
@@ -15,7 +16,7 @@
  *
  * 3. Right sidebar collapse drawer. Inject a viewport-anchored
  *    pull-tab button that toggles `body.sidebar-collapsed`. State
- *    persists in localStorage. Styles in labki-tweeki.css section
+ *    persists in localStorage. Styles in labki-tweeki.less section
  *    "Right sidebar collapse drawer".
  *
  * 4. Page actions relocation. Lift the action-button cluster (Edit,
@@ -26,7 +27,7 @@
  *    the same top-right slot — relocating ours would overlap it.
  *    Edit-source (action=edit) and Edit-with-form (Special:FormEdit)
  *    use a different layout and are unaffected. Styles in
- *    labki-tweeki.css section "Page actions relocation".
+ *    labki-tweeki.less section "Page actions relocation".
  *
  * 5. Echo notifications under Tweeki: notifications live inside the
  *    user (PERSONAL) dropdown rather than as standalone navbar
@@ -50,38 +51,31 @@
 	);
 
 	// === Theme toggle ===========================================
+	// The inline head-script in skins.platform.php has already
+	// applied `data-bs-theme` and `skin-theme-clientpref-{day|night}`
+	// to <html> before paint. This script just maintains both on
+	// toggle and syncs the toggle button's icon.
 	var THEME_STORAGE_KEY = 'labki-theme';
 	var TOGGLE_ID = 'labki-theme-toggle';
 
-	function readStoredTheme() {
-		try {
-			return localStorage.getItem( THEME_STORAGE_KEY );
-		} catch ( e ) {
-			return null;
-		}
-	}
-
-	function persistTheme( theme ) {
+	function setTheme( theme ) {
+		var html = document.documentElement;
+		html.setAttribute( 'data-bs-theme', theme );
+		html.classList.remove( 'skin-theme-clientpref-day', 'skin-theme-clientpref-night' );
+		html.classList.add( theme === 'dark' ? 'skin-theme-clientpref-night' : 'skin-theme-clientpref-day' );
 		try {
 			localStorage.setItem( THEME_STORAGE_KEY, theme );
 		} catch ( e ) {
 			// localStorage unavailable (private browsing, quota); silent.
 		}
+		syncToggleIcon( theme );
 	}
 
-	function preferredTheme() {
-		return readStoredTheme() === 'dark' ? 'dark' : 'light';
-	}
-
-	function applyTheme( theme ) {
-		document.documentElement.setAttribute( 'data-bs-theme', theme );
-		var toggle = document.getElementById( TOGGLE_ID );
-		if ( toggle ) {
-			var icon = toggle.querySelector( 'span.fa' );
-			if ( icon ) {
-				icon.classList.remove( 'fa-sun', 'fa-moon' );
-				icon.classList.add( theme === 'dark' ? 'fa-sun' : 'fa-moon' );
-			}
+	function syncToggleIcon( theme ) {
+		var icon = document.querySelector( '#' + TOGGLE_ID + ' span.fa' );
+		if ( icon ) {
+			icon.classList.remove( 'fa-sun', 'fa-moon' );
+			icon.classList.add( theme === 'dark' ? 'fa-sun' : 'fa-moon' );
 		}
 	}
 
@@ -90,18 +84,13 @@
 		if ( !toggle ) {
 			return;
 		}
+		syncToggleIcon( document.documentElement.getAttribute( 'data-bs-theme' ) );
 		toggle.addEventListener( 'click', function ( e ) {
 			e.preventDefault();
 			var current = document.documentElement.getAttribute( 'data-bs-theme' ) || 'light';
-			var next = current === 'dark' ? 'light' : 'dark';
-			applyTheme( next );
-			persistTheme( next );
+			setTheme( current === 'dark' ? 'light' : 'dark' );
 		} );
 	}
-
-	// Apply the user's theme before the page paints to avoid a flash
-	// of light content under a dark preference.
-	applyTheme( preferredTheme() );
 
 	// === Sidebar collapse drawer ================================
 	var SIDEBAR_STORAGE_KEY = 'labki.sidebarCollapsed';
@@ -461,9 +450,6 @@
 
 	// === Init ===================================================
 	function start() {
-		// Re-apply theme now that the toggle button is in the DOM, so
-		// its icon is in sync with the current `data-bs-theme`.
-		applyTheme( preferredTheme() );
 		bindThemeToggle();
 
 		// relocatePageActions runs first so installSidebarToggle sees the

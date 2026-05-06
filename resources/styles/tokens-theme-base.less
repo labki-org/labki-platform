@@ -1,0 +1,83 @@
+/**
+ * labki tokens — base (light) theme
+ *
+ * Defines the `.theme-base()` mixin, called from a top-level
+ * `:root { … }` block in `labki-tweeki.less`. Citizen's skin
+ * uses the same mixin-pattern (rather than direct `@import`
+ * into a selector, which wikimedia/less.php doesn't support).
+ *
+ * Color values are in OKLCH (perceptually uniform). The dark
+ * theme (`tokens-theme-dark.less`) overrides the same token
+ * names with dark-mode lightness values so the palette is a
+ * parametric mirror rather than a hand-tuned alternative —
+ * change a hue here and the dark variant follows.
+ *
+ * Surface elevation uses a delta-lightness pattern: each level
+ * is derived from `--color-surface-0-lightness` by composing
+ * with `--delta-lightness-surface`. Re-tune the whole surface
+ * ramp (e.g., to make cards more pronounced) by changing the
+ * delta in one place.
+ *
+ * `~'…'` LESS string escape keeps `oklch(…)` opaque to LESS's
+ * parser — pass through to the browser as-is.
+ */
+
+.theme-base() {
+	/* === Hue / chroma constants ===
+	   Shared across light + dark; only lightness flips. */
+	--color-primary-hue:     250;
+	--color-primary-chroma:  0.06;
+	--color-accent-hue:      245;
+	--color-accent-chroma:   0.10;
+	--color-neutral-hue:     250;
+	--color-neutral-chroma:  0.01;
+	--color-danger-hue:      25;
+	--color-danger-chroma:   0.18;
+
+	/* === Surface elevation ramp ===
+	   `--color-surface-0-lightness` is the base surface; each
+	   higher level subtracts (light) or adds (dark) the delta. */
+	--color-surface-0-lightness: 100%;
+	--delta-lightness-surface:   -2%;
+
+	/* === Token definitions === */
+	--labki-primary:       ~'oklch(28% var(--color-primary-chroma) var(--color-primary-hue))';
+	--labki-primary-light: ~'oklch(38% var(--color-primary-chroma) var(--color-primary-hue))';
+	--labki-primary-dark:  ~'oklch(18% var(--color-primary-chroma) var(--color-primary-hue))';
+
+	/* Accent — RGB triples are the source so we can hook into
+	   Bootstrap's `--bs-link-color-rgb`, which drives every base
+	   `<a>` via Bootstrap Reboot. `--labki-accent` derives from it
+	   for non-Bootstrap consumers (footer, headings, …). Keep the
+	   triple visually paired with the OKLCH we used to use:
+	   `oklch(54% 0.10 245)` ≈ rgb(53, 110, 175). */
+	--labki-accent-rgb:       53, 110, 175;
+	--labki-accent-hover-rgb: 32, 84, 142;
+	--labki-accent:        rgb( var(--labki-accent-rgb) );
+	--labki-accent-hover:  rgb( var(--labki-accent-hover-rgb) );
+
+	/* Hook into Bootstrap so all base links pick up the accent
+	   without a per-element rule. `.btn` and `a.new` retain their
+	   own colors via the natural cascade. */
+	--bs-link-color-rgb:       var(--labki-accent-rgb);
+	--bs-link-hover-color-rgb: var(--labki-accent-hover-rgb);
+
+	--labki-text:          ~'oklch(28% 0.005 var(--color-neutral-hue))';
+	--labki-text-muted:    ~'oklch(50% 0.02 var(--color-neutral-hue))';
+
+	--labki-bg-subtle:     ~'oklch(96% 0.005 var(--color-neutral-hue))';
+	--labki-border:        ~'oklch(88% var(--color-neutral-chroma) var(--color-neutral-hue))';
+
+	--labki-surface:       ~'oklch(var(--color-surface-0-lightness) 0 0)';
+	--labki-surface-1:     ~'oklch(calc(var(--color-surface-0-lightness) + var(--delta-lightness-surface)) 0.005 var(--color-neutral-hue))';
+	--labki-surface-2:     ~'oklch(calc(var(--color-surface-0-lightness) + (var(--delta-lightness-surface) * 2)) 0.005 var(--color-neutral-hue))';
+
+	--labki-heading:       var(--labki-primary);
+	--labki-danger:        ~'oklch(58% var(--color-danger-chroma) var(--color-danger-hue))';
+
+	/* Shadows aren't theme-flipped via lightness; defined here
+	   for tokenization parity. Dark theme overrides with
+	   higher-opacity black to read on dark surfaces. */
+	--labki-shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.07);
+	--labki-shadow-md: 0 4px 16px rgba(0, 59, 92, 0.12);
+}

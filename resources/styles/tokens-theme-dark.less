@@ -1,0 +1,64 @@
+/**
+ * labki tokens — dark theme
+ *
+ * Overrides the `--labki-*` tokens with dark lightness values
+ * and pulls in `.cdx-mode-dark()` for the MediaWiki Codex CSS
+ * variables. Tweeki doesn't load Codex's dark-mode CSS itself,
+ * so redefining `--color-base`, `--background-color-base`, etc.
+ * here is what makes OOUI/Codex components flip in dark mode.
+ *
+ * Per-element overrides in `labki-tweeki.less` cover the
+ * remaining surfaces — MW core / SMW LESS uses
+ * `mediawiki.skin.defaults.less`, which defines its tokens as
+ * literal hex (Vector/Minerva remap them via their own
+ * `mediawiki.skin.variables.less` to `var(--token, fallback)`;
+ * Tweeki doesn't, so for those compile-time literals the only
+ * lever is a per-element rule).
+ */
+
+@import 'mediawiki.skin.codex-design-tokens/theme-wikimedia-ui-mixin-dark.less';
+
+.theme-dark() {
+	/* === Surface ramp — dark mode reverses the elevation delta ===
+	   In light mode each higher level is darker (subtract delta from
+	   100%); in dark mode each higher level is lighter (add delta to
+	   the dark base). Same code shape, opposite direction.
+	   22% (vs the 18% we tried first) reads as "dark blue-grey" rather
+	   than "near-black", landing between GitHub-dark (#0d1117 ≈ 16%)
+	   and Slack-dark (#1a1d21 ≈ 22%). */
+	--color-surface-0-lightness: 22%;
+	--delta-lightness-surface:   2%;
+
+	/* === Labki token overrides === */
+	--labki-primary:       ~'oklch(15% var(--color-primary-chroma) var(--color-primary-hue))';
+	--labki-primary-light: ~'oklch(22% var(--color-primary-chroma) var(--color-primary-hue))';
+	--labki-primary-dark:  ~'oklch(8% var(--color-primary-chroma) var(--color-primary-hue))';
+
+	/* Lighter blue for dark surfaces; visually paired with the
+	   OKLCH we used to use: `oklch(70% 0.10 245)` ≈ rgb(130, 168, 220).
+	   `--labki-accent` and `--bs-link-color-rgb` cascade through
+	   from the base mixin via the var() chain — only the RGB
+	   source needs an override. */
+	--labki-accent-rgb:       130, 168, 220;
+	--labki-accent-hover-rgb: 165, 196, 235;
+
+	--labki-text:          ~'oklch(94% 0.01 var(--color-neutral-hue))';
+	--labki-text-muted:    ~'oklch(70% 0.02 var(--color-neutral-hue))';
+
+	--labki-bg-subtle:     ~'oklch(20% 0.02 var(--color-neutral-hue))';
+	--labki-border:        ~'oklch(28% 0.03 var(--color-neutral-hue))';
+
+	/* Dark heading is lighter than --labki-primary so it reads on
+	   the dark `--labki-bg-subtle` surface (h1/h2 backgrounds). */
+	--labki-heading:       ~'oklch(80% 0.05 var(--color-accent-hue))';
+
+	--labki-danger:        ~'oklch(65% 0.16 var(--color-danger-hue))';
+
+	--labki-shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.50);
+	--labki-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.60);
+
+	/* MediaWiki Codex dark tokens — mirrors `theme-wikimedia-ui-
+	   mode-dark.css`, kept in sync with Codex automatically. Same
+	   pattern Vector 2022 / Minerva use. */
+	.cdx-mode-dark();
+}
