@@ -415,6 +415,59 @@ footer.footer.bg-light,
 	border-color: var(--labki-border);
 }
 
+/* === Catlinks ===
+   Tweeki hides catlinks by default (`skins.tweeki.styles` ships
+   `#catlinks { display: none }`); Labki re-shows them as a subtle-
+   surface bar on every page that has visible categories. Was
+   previously a per-wiki override in `MediaWiki:Tweeki.css` using
+   hex literals — consolidated here so every deployment gets it
+   without manual seeding, and tokenized so light/dark flip
+   automatically. The `:not(.catlinks-allhidden)` keeps the hide
+   path intact for catlinks-empty pages (Skin sets that class on
+   the outer div when no visible categories). Specificity (1,1,0)
+   beats Tweeki's `#catlinks` (1,0,0) and MW's `.catlinks` (0,1,0)
+   without `!important`. */
+#catlinks:not(.catlinks-allhidden) {
+	display: block;
+	margin-top: 1.5em;
+	padding: 0.5em 0.75em;
+	background: var(--labki-bg-subtle);
+	border: 1px solid var(--labki-border);
+	border-radius: 4px;
+	color: var(--labki-text);
+}
+
+#catlinks .mw-normal-catlinks ul,
+#catlinks .mw-normal-catlinks li {
+	display: inline;
+	padding-left: 0;
+}
+
+#catlinks .mw-normal-catlinks li:not(:last-child)::after {
+	content: " | ";
+	color: var(--labki-text-muted);
+}
+
+#catlinks a {
+	color: var(--labki-accent);
+}
+
+/* === Fieldset / legend ===
+   HTML <fieldset> + <legend> (used by Cargo filter boxes, MW prefs
+   subsections, PageForms input groups) renders with browser-default
+   light borders and the legend paints through to the page bg. On dark
+   mode the body bg is dark, but Bootstrap Reboot's `legend` rule sets
+   no explicit bg and some browsers leak the system color through —
+   pin both to tokens so they flip cleanly. */
+#content fieldset {
+	border-color: var(--labki-border);
+}
+
+#content legend {
+	color: var(--labki-text);
+	background-color: transparent;
+}
+
 #content .mw-search-profile-tabs .search-types li {
 	background-color: transparent;
 }
