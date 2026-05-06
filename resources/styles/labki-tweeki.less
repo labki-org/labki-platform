@@ -468,6 +468,23 @@ footer.footer.bg-light,
 	background-color: transparent;
 }
 
+/* === ConfirmAccount extension ===
+   ConfirmAccount's `confirmaccount.css` paints request-row chrome
+   with hardcoded pastels (`#f9f9f9`, `#f0fff0`, `#f0ffff`) — a
+   pale-green `.mw-confirmaccount-type-0` body becomes unreadable
+   in dark mode (light text on near-white). Re-paint with tokens:
+   the queue-type tint is dropped so all queues read uniformly
+   against the dark surface, with the existing `mw-confirmaccount-
+   bar` red border kept as the unread/pending signal. */
+#content .mw-confirmaccount-bar,
+#content .mw-confirmaccount-type-0,
+#content .mw-confirmaccount-type-1,
+#content .mw-confirmaccount-body-0,
+#content .mw-confirmaccount-body-1 {
+	background-color: var(--labki-bg-subtle);
+	color: var(--labki-text);
+}
+
 #content .mw-search-profile-tabs .search-types li {
 	background-color: transparent;
 }
