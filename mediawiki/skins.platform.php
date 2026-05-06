@@ -12,7 +12,7 @@ if (!defined('MEDIAWIKI')) {
 // --- Skin loads ---
 //
 // Tweeki is the curated labki experience: it carries platform-specific
-// chrome (labki-tweeki.css/js — navbar, footer, theme toggle, sidebar
+// chrome (labki-tweeki.less/js — navbar, footer, theme toggle, sidebar
 // drawer, page-actions relocation, login-state classes, custom nav
 // elements like LABKI-LOGIN and LABKI-THEME-TOGGLE), so anonymous
 // viewers and new accounts land here by default.
@@ -36,7 +36,7 @@ $wgDefaultSkin = 'tweeki';
 
 // Register and load custom CSS
 $wgResourceModules['skin.labki.tweeki.styles'] = [
-    'styles' => [ 'resources/styles/labki-tweeki.css' ],
+    'styles' => [ 'resources/styles/labki-tweeki.less' ],
     'localBasePath' => $IP,
     'remoteBasePath' => $wgResourceBasePath,
 ];
@@ -79,7 +79,7 @@ $wgMessagesDirs['LabkiPlatform'] = __DIR__ . '/i18n';
 // Echo hands the Notices entry an OOUI icon name `tray` which Tweeki
 // blindly emits as `<span class="fa fa-tray">`. FontAwesome Free
 // doesn't ship a `fa-tray` glyph, so the span renders empty. We give
-// `fa-tray` the inbox glyph in resources/styles/labki-tweeki.css —
+// `fa-tray` the inbox glyph in resources/styles/labki-tweeki.less —
 // see the comment there.
 
 // Hide UI clutter from anonymous users (private wiki context)
@@ -258,12 +258,27 @@ $wgHooks['BeforePageDisplay'][] = static function ( $out, $skin ) {
     // on the second visit.
     $serverEmpty = $sidebarLikelyEmpty ? 'true' : 'false';
 
+    // Theme handling co-applies two signals on <html>:
+    //   * `data-bs-theme="dark"` — Bootstrap 5.3's canonical attribute.
+    //     BS components (navbar dropdowns, modals, alerts, …) flip on
+    //     this attribute. Without it BS chrome stays light regardless
+    //     of our CSS rules.
+    //   * `skin-theme-clientpref-{day|night}` — MediaWiki's canonical
+    //     class. MW core / Codex / extensions (Vector 2022, Minerva,
+    //     and any extension that participates in dark mode) hook in
+    //     via this class. Stamping it lets those components flip
+    //     automatically without per-element overrides on our side.
+    // Both are applied here from localStorage before paint to avoid
+    // a flash of light content under a dark preference.
+    // The `-os` value (OS-follow mode) is deliberately NOT pre-applied
+    // server-side — `prefers-color-scheme` is a JS-only signal, so JS
+    // applies it after first paint when the user opts into auto.
     $out->addHeadItem(
         'labki-ui-state-init',
         "<script>(function(){try{"
-        . "if(localStorage.getItem('labki-theme')==='dark'){"
-        . "document.documentElement.setAttribute('data-bs-theme','dark');"
-        . "}"
+        . "var dark=localStorage.getItem('labki-theme')==='dark';"
+        . "document.documentElement.setAttribute('data-bs-theme',dark?'dark':'light');"
+        . "document.documentElement.classList.add('skin-theme-clientpref-'+(dark?'night':'day'));"
         . "if(localStorage.getItem('labki.sidebarCollapsed')==='true'){"
         . "document.documentElement.classList.add('sidebar-collapsed');"
         . "}"

@@ -72,6 +72,29 @@ while [ $count -lt $MAX_RETRIES ]; do
 done
 [ "$success" = true ] || fail "Wiki did not respond in time."
 
+# --- Verify platform ResourceLoader modules compile and serve ---
+# A typo in skins.platform.php's $wgResourceModules registration, a
+# broken localBasePath, or a syntax error in our LESS files would all
+# produce HTTP 200 (the page still renders against default Tweeki),
+# so the Main_Page check above can't catch them. ResourceLoader
+# encodes the failure mode in the response body:
+#   * unregistered module -> /* Problematic modules: { "x": "missing" } */
+#   * LESS compile error  -> /* Less compile error: ... */
+# Both are served with status 200, so we have to inspect the body.
+verify_module() {
+    local module=$1 only=$2 body
+    body=$(curl -sS "http://localhost:8080/load.php?modules=$module&only=$only&skin=tweeki&debug=true") \
+        || fail "ResourceLoader request for '$module' failed."
+    [ -n "$body" ] || fail "ResourceLoader returned empty body for '$module'."
+    case "$body" in
+        *"\"$module\": \"missing\""*) fail "ResourceLoader module '$module' is not registered." ;;
+        *"Less compile error"*)       fail "LESS compile error in module '$module'." ;;
+    esac
+}
+echo "[smoke-test] Verifying platform ResourceLoader modules..."
+verify_module skin.labki.tweeki.styles  styles
+verify_module skin.labki.tweeki.scripts scripts
+
 # --- Probe runtime config from inside the container ---
 # We avoid the HTTP API for this because the wiki is private
 # ($wgGroupPermissions['*']['read'] = false), so anonymous siteinfo

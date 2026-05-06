@@ -1,73 +1,61 @@
-/*
+/**
  * Labki Tweeki Theme
  *
  * Academic-styled defaults for the Tweeki skin.
- * All colors use CSS custom properties (--labki-*) so users can retheme
- * by redefining them in MediaWiki:Tweeki.css or a custom ResourceLoader module.
+ *
+ * Design tokens live in:
+ *   - tokens-theme-base.less — `--labki-*` definitions for the
+ *     light theme, declared in OKLCH for perceptual uniformity
+ *   - tokens-theme-dark.less — the same tokens overridden with
+ *     dark-mode lightness values, plus a mirror of MediaWiki
+ *     Codex's own dark tokens so OOUI/Codex components flip
+ *     without per-element rules
+ *
+ * Theme switching uses two co-applied class signals on <html>:
+ *   - `.skin-theme-clientpref-night` — MediaWiki's canonical class.
+ *     MW core / Codex / extensions hook in via this selector.
+ *   - `[data-bs-theme="dark"]` — Bootstrap 5.3's canonical attribute.
+ *     Bootstrap components (navbar, dropdowns, modals, alerts, …)
+ *     flip via this attribute.
+ * Both signals are stamped together by labki-tweeki.js + the inline
+ * head-script in skins.platform.php.
+ *
+ * Per-wiki retheme: redefine the `--labki-*` tokens in
+ * `MediaWiki:Tweeki.css` or a custom ResourceLoader module.
  */
 
-/* === Color Palette === */
+@import 'tokens-theme-base.less';
+@import 'tokens-theme-dark.less';
+
 :root {
-	--labki-primary:       #1a3a5c;
-	--labki-primary-light: #24507a;
-	--labki-primary-dark:  #0f2440;
-	--labki-accent:        #3d7ab5;
-	--labki-accent-hover:  #2c6699;
-	--labki-text:          #2c2c2c;
-	--labki-text-muted:    #5a6a7a;
-	--labki-bg-subtle:     #f4f6f8;
-	--labki-border:        #d8dde3;
-	--labki-heading:       #1a3a5c;
-	--labki-warning:       #f0ad4e;
-	--labki-danger:        #d9534f;
-
-	/* Surface and elevation tokens. Schema bundles (TemplateStyles)
-	   and per-wiki CSS compose against these so cards, sideboxes,
-	   etc. flip cleanly with [data-bs-theme="dark"] without needing
-	   their own dark-mode logic. */
-	--labki-surface:       #ffffff;
-	--labki-shadow-sm:     0 1px 4px rgba(0, 0, 0, 0.07);
-	--labki-shadow-md:     0 4px 16px rgba(0, 59, 92, 0.12);
-	--labki-radius:        8px;
+	.theme-base();
 }
 
-/* Dark theme palette. Bootstrap 5.3 handles most components via
-   `data-bs-theme="dark"`; we just retune the `--labki-*` palette so
-   our custom navbar / heading / link styles match the dark page. */
+.skin-theme-clientpref-night,
 [data-bs-theme="dark"] {
-	--labki-primary:       #0d1f33;
-	--labki-primary-light: #173052;
-	--labki-primary-dark:  #050d14;
-	--labki-accent:        #5fa3d6;
-	--labki-accent-hover:  #7cb6e0;
-	--labki-text:          #e6edf3;
-	--labki-text-muted:    #9aa6b3;
-	--labki-bg-subtle:     #1a2230;
-	--labki-border:        #2c3645;
-	--labki-heading:       #b8d4f0;
-	--labki-warning:       #f0ad4e;
-	--labki-danger:        #e25d59;
-
-	--labki-surface:       #161b22;
-	--labki-shadow-sm:     0 1px 4px rgba(0, 0, 0, 0.50);
-	--labki-shadow-md:     0 4px 16px rgba(0, 0, 0, 0.60);
-	/* --labki-radius shared with light mode. */
+	.theme-dark();
 }
 
-[data-bs-theme="dark"] body {
-	background-color: #0d1117;
-	color: var(--labki-text);
-}
-
-[data-bs-theme="dark"] #content {
+.skin-theme-clientpref-night body {
 	background-color: var(--labki-surface);
 	color: var(--labki-text);
 }
 
-[data-bs-theme="dark"] footer.footer,
-[data-bs-theme="dark"] #footer {
-	background-color: #0d1117;
-	color: var(--labki-text-muted);
+.skin-theme-clientpref-night #content {
+	background-color: var(--labki-surface);
+	color: var(--labki-text);
+}
+
+/* Tweeki applies Bootstrap's `.bg-light` utility to the footer,
+   which paints `background-color: rgba(var(--bs-light-rgb), 1)
+   !important`. The !important blocks our token override at any
+   specificity, so we match it: matching `.bg-light` and using
+   !important pins our subtle-surface token regardless of cascade.
+   The token already flips with [data-bs-theme] so light/dark both
+   work from this single rule (no separate dark-mode override). */
+footer.footer.bg-light,
+#footer.bg-light {
+	background-color: var(--labki-bg-subtle) !important;
 }
 
 /* === Dark-mode form input contrast ===
@@ -80,7 +68,7 @@
    compiled CSS module loads after ours; without it our color/bg
    ties on specificity and Tweeki's `--bs-body-bg` (which adapts
    for elements that DO carry .form-control) wins by cascade. */
-[data-bs-theme="dark"] #content :is(
+.skin-theme-clientpref-night #content {
 	textarea,
 	select,
 	input:not([type]),
@@ -93,17 +81,19 @@
 	input[type="tel"],
 	input[type="date"],
 	input[type="datetime-local"],
-	input[type="time"]
-) {
-	background-color: var(--labki-bg-subtle) !important;
-	color: var(--labki-text) !important;
-	border-color: var(--labki-border) !important;
-}
+	input[type="time"] {
+		background-color: var(--labki-bg-subtle) !important;
+		color: var(--labki-text) !important;
+		border-color: var(--labki-border) !important;
+	}
 
-[data-bs-theme="dark"] #content :is(textarea, select, input):focus {
-	background-color: var(--labki-surface) !important;
-	color: var(--labki-text) !important;
-	border-color: var(--labki-accent) !important;
+	textarea:focus,
+	select:focus,
+	input:focus {
+		background-color: var(--labki-surface) !important;
+		color: var(--labki-text) !important;
+		border-color: var(--labki-accent) !important;
+	}
 }
 
 /* === Theme toggle button === */
@@ -123,41 +113,32 @@
 	color: #fff !important;
 }
 
-/* === Navbar === */
-/* Tweeki outputs #mw-navigation.navbar.navbar-light.bg-light by default;
-   override via specificity + !important where Bootstrap utilities would win. */
+/* === Navbar ===
+   Tweeki outputs #mw-navigation.navbar.bg-light. Drive nav-link /
+   brand / active colors via Bootstrap's `--bs-navbar-*` vars (the
+   `.nav-link` etc. rules already consume them) — no !important
+   needed. The bg still wins via !important against `.bg-light`. */
 #mw-navigation.navbar {
+	--bs-navbar-color:             rgba(255, 255, 255, 0.9);
+	--bs-navbar-hover-color:       #fff;
+	--bs-navbar-active-color:      #fff;
+	--bs-navbar-brand-color:       rgba(255, 255, 255, 0.9);
+	--bs-navbar-brand-hover-color: #fff;
+
 	background-color: var(--labki-primary) !important;
 	border-bottom: 2px solid var(--labki-primary-dark);
-}
 
-#mw-navigation.navbar .navbar-brand,
-#mw-navigation.navbar .nav-link,
-#mw-navigation.navbar .navbar-text {
-	color: rgba(255, 255, 255, 0.9) !important;
-}
+	.navbar-toggler-icon {
+		filter: invert(1);
+	}
 
-#mw-navigation.navbar .nav-link:hover,
-#mw-navigation.navbar .nav-link:focus {
-	color: #fff !important;
-}
+	.navbar-toggler {
+		border-color: rgba(255, 255, 255, 0.3);
+	}
 
-#mw-navigation.navbar .nav-link.active {
-	color: #fff !important;
-}
-
-/* Toggler icon: invert for dark background */
-#mw-navigation.navbar .navbar-toggler-icon {
-	filter: invert(1);
-}
-
-#mw-navigation.navbar .navbar-toggler {
-	border-color: rgba(255, 255, 255, 0.3);
-}
-
-/* Dropdown menus in navbar */
-#mw-navigation.navbar .dropdown-menu {
-	border: 1px solid var(--labki-border);
+	.dropdown-menu {
+		border: 1px solid var(--labki-border);
+	}
 }
 
 /* === FontAwesome glyph for Echo's "tray" icon === */
@@ -251,22 +232,6 @@
 	padding-bottom: 0.25em;
 }
 
-/* === Links ===
-   `:not(.new)` defers to MediaWiki's redlink styling (a.new is red).
-   Without it our `#content a` rule outscores `a.new` on specificity
-   and broken links render in our accent color. */
-#content a:not(.btn):not(.new),
-#mw-panel a {
-	color: var(--labki-accent);
-}
-
-#content a:not(.btn):not(.new):hover,
-#content a:not(.btn):not(.new):focus,
-#mw-panel a:hover,
-#mw-panel a:focus {
-	color: var(--labki-accent-hover);
-}
-
 /* === Content readability === */
 #content {
 	line-height: 1.7;
@@ -274,46 +239,293 @@
 }
 
 /* === Blockquotes ===
-   Bootstrap 5's Reboot zeroes the browser default left margin on
-   <blockquote>, so without an explicit rule blockquotes render
-   indistinguishably from surrounding paragraphs. Restore a visible
-   indent + accent rail using theme tokens so it flips with dark mode. */
+   Bootstrap's Reboot already gives <blockquote> a 1rem bottom margin
+   (collapses with the preceding <p>); we only need the visual
+   differentiator — left rail, indent past it, muted italic. */
 #content blockquote {
-	margin: 1rem 0;
-	padding: 0.4rem 1rem;
+	padding-left: 1rem;
 	border-left: 4px solid var(--labki-border);
 	color: var(--labki-text-muted);
 	font-style: italic;
 }
 
-/* === Tables === */
+/* === Tables ===
+   MW core's content.tables.less compiles `@background-color-neutral-
+   subtle` to a literal hex (Tweeki doesn't ship a Codex-aware
+   `mediawiki.skin.variables.less`), so the table won't flip via
+   token. Re-paint with `--labki-*` tokens so it does. */
+#content table.wikitable,
+#content table.sortable {
+	background-color: var(--labki-surface);
+	color: var(--labki-text);
+	border-color: var(--labki-border);
+}
+
 #content table.wikitable th,
 #content table.sortable th {
 	background-color: var(--labki-bg-subtle);
-	color: var(--labki-primary);
+	color: var(--labki-heading);
 	border-color: var(--labki-border);
 }
 
-#content table.wikitable,
-#content table.sortable {
+#content table.wikitable td,
+#content table.sortable td {
 	border-color: var(--labki-border);
 }
 
-/* === Buttons === */
+/* === Code blocks ===
+   Browser defaults / Tweeki's vendor CSS paint <code>, <pre>, <kbd>,
+   <samp> against literal whites/grays. Token-driven so they flip
+   with dark mode. Inline <code> gets a thin border + small padding
+   to read as inline code; <pre> blocks get block-level chrome. */
+#content code,
+#content kbd,
+#content samp {
+	background-color: var(--labki-bg-subtle);
+	color: var(--labki-text);
+	border: 1px solid var(--labki-border);
+	padding: 1px 6px;
+	border-radius: 3px;
+	font-size: 0.92em;
+}
+
+#content pre {
+	background-color: var(--labki-bg-subtle);
+	color: var(--labki-text);
+	border: 1px solid var(--labki-border);
+	padding: 0.75em 1em;
+	border-radius: 4px;
+}
+
+/* When <code>/<kbd>/<samp> is nested in <pre>, drop the inline
+   chrome — the outer <pre> already provides bg + border + padding,
+   and stacking them produces a visible double-box. */
+#content pre code,
+#content pre kbd,
+#content pre samp {
+	background: transparent;
+	border: none;
+	padding: 0;
+	font-size: inherit;
+	border-radius: 0;
+}
+
+/* === SyntaxHighlight (Pygments) ===
+   The line-number gutter is painted via `box-shadow: inset` using a
+   Codex token compiled to literal hex; re-paint with our subtle token
+   so it flips. Pygments' per-token syntax colors are unchanged —
+   they read on both light and dark surfaces. */
+#content .mw-highlight {
+	background-color: var(--labki-bg-subtle);
+	color: var(--labki-text);
+	border: 1px solid var(--labki-border);
+	border-radius: 4px;
+}
+
+#content .mw-highlight pre {
+	background: transparent;
+	border: none;
+	border-radius: 0;
+	padding: 0.5em 0.75em;
+}
+
+/* `#content pre` (1/0/1) beats SyntaxHighlight's `.mw-highlight-lines
+   pre` (0/1/1), so we restore the gutter `padding-left` here at
+   matching specificity — without it line numbers overlap the code. */
+#content .mw-highlight.mw-highlight-lines pre {
+	padding-left: 3.5em;
+	box-shadow: inset 2.75em 0 0 var(--labki-bg-subtle);
+}
+
+#content .mw-highlight .linenos {
+	color: var(--labki-text-muted);
+}
+
+/* Legacy table-based linenos (older SyntaxHighlight versions render
+   `<table class="highlighttable">` instead of absolute spans). */
+#content table.highlighttable {
+	background-color: transparent;
+	border: none;
+	border-collapse: collapse;
+	margin: 0;
+	width: auto;
+}
+
+#content table.highlighttable td {
+	border: none;
+	padding: 0;
+	vertical-align: top;
+}
+
+#content table.highlighttable td.linenos {
+	background-color: var(--labki-bg-subtle);
+	color: var(--labki-text-muted);
+	border-right: 1px solid var(--labki-border);
+	user-select: none;
+}
+
+/* === SMW factbox ===
+   SMW's `.smw-factbox` (the property/values panel at the bottom of
+   data pages, also Special:Browse) is styled via Codex tokens that
+   compile to literal `#ffffff` body + `#f8f9fa` header. Override
+   with our token palette so the factbox flips with theme. */
+#content .smw-factbox {
+	background-color: var(--labki-surface);
+	color: var(--labki-text);
+	border-color: var(--labki-border);
+}
+
+#content .smw-factbox-header,
+#content .smw-factbox-pagination,
+#content .smw-factbox-section-heading {
+	background-color: var(--labki-bg-subtle);
+	color: var(--labki-heading);
+	border-color: var(--labki-border);
+}
+
+/* SMW factbox property name strip uses Codex's neutral-subtle
+   literal — same flip pattern. */
+#content {
+	.smw-factbox-property-name {
+		background-color: var(--labki-bg-subtle);
+		color: var(--labki-text);
+		border-color: var(--labki-border);
+	}
+
+	.smw-factbox-property-values {
+		color: var(--labki-text);
+	}
+}
+
+/* === Subtle-surface MW component re-paints ===
+   Components painted by MW core / Codex with literal hex from
+   compile-time `@background-color-neutral-subtle`. Token-driven
+   so they flip with theme. */
+#content .mw-search-profile-tabs,
+#content .mw-search-profile-tabs .search-types,
+#content .mw-search-profile-tabs .search-types ul,
+#content .mw-changeslist-legend,
+#content .mw-prefs-buttons,
+#content .mw-htmlform-submit-buttons,
+#content .mw-prefs-form-stickyFooter,
+#content .editOptions,
+#content .thumbinner {
+	background-color: var(--labki-bg-subtle);
+	color: var(--labki-text);
+	border-color: var(--labki-border);
+}
+
+#content .mw-search-profile-tabs .search-types li {
+	background-color: transparent;
+}
+
+#content .mw-changeslist-legend dt,
+#content .mw-changeslist-legend dd {
+	color: var(--labki-text);
+}
+
+#content .mw-prefs-buttons,
+#content .mw-htmlform-submit-buttons,
+#content .mw-prefs-form-stickyFooter {
+	border: none;
+	border-top: 1px solid var(--labki-border);
+}
+
+#content .editOptions {
+	border-radius: 4px;
+	padding: 0.75em 1em;
+	margin-top: 0.75em;
+}
+
+#content #editpage-copywarn,
+#content #editpage-copywarn p {
+	color: var(--labki-text-muted);
+}
+
+#content #editpage-copywarn a {
+	color: var(--labki-accent);
+}
+
+/* Browser-default <hr> renders with hardcoded grays. */
+#content hr {
+	border: none;
+	border-top: 1px solid var(--labki-border);
+	margin: 1.5em 0;
+}
+
+#content .thumbcaption {
+	color: var(--labki-text-muted);
+}
+
+/* === MediaWiki message boxes ===
+   MW core's `.mw-message-box-*` (and the legacy `.successbox` /
+   `.errorbox` / `.warningbox`) uses Codex tokens compiled to literal
+   pastel backgrounds. They read fine on light surfaces but glow
+   harshly on dark. Tint the dark-mode bg with our subtle surface
+   while letting MW's left-border accent carry the semantic signal.
+   Bootstrap's `.alert` handles itself via `--bs-*` tokens; this rule
+   targets MW-native boxes only. */
+.skin-theme-clientpref-night #content .mw-message-box,
+.skin-theme-clientpref-night #content .successbox,
+.skin-theme-clientpref-night #content .errorbox,
+.skin-theme-clientpref-night #content .warningbox {
+	background-color: var(--labki-bg-subtle);
+	color: var(--labki-text);
+}
+
+/* === Diff tables ===
+   Page-history diffs paint `.diff-*` rows with hardcoded pastels.
+   Dark-mode-only repaint; `ins`/`del` carry the per-character
+   highlight. */
+.skin-theme-clientpref-night #content {
+	.diff-context {
+		background-color: var(--labki-surface);
+		color: var(--labki-text);
+	}
+
+	.diff-addedline {
+		background-color: rgba(95, 179, 95, 0.12);
+		color: var(--labki-text);
+	}
+
+	.diff-addedline ins {
+		background-color: rgba(95, 179, 95, 0.45);
+		color: #d8f0d8;
+	}
+
+	.diff-deletedline {
+		background-color: rgba(217, 83, 79, 0.12);
+		color: var(--labki-text);
+	}
+
+	.diff-deletedline del {
+		background-color: rgba(217, 83, 79, 0.45);
+		color: #f5d4d2;
+	}
+
+	.diff-marker {
+		color: var(--labki-text-muted);
+	}
+}
+
+/* === Buttons ===
+   Bootstrap drives `.btn-primary` via `--bs-btn-*` vars, so just
+   redefine those — no need to fight the cascade with explicit
+   bg/border on `.btn-primary` and `.btn-primary:hover`. */
 .btn-primary {
-	background-color: var(--labki-primary);
-	border-color: var(--labki-primary);
+	--bs-btn-bg:                 var(--labki-primary);
+	--bs-btn-border-color:       var(--labki-primary);
+	--bs-btn-hover-bg:           var(--labki-primary-light);
+	--bs-btn-hover-border-color: var(--labki-primary-light);
+	--bs-btn-active-bg:          var(--labki-primary-dark);
+	--bs-btn-active-border-color: var(--labki-primary-dark);
 }
 
-.btn-primary:hover {
-	background-color: var(--labki-primary-light);
-	border-color: var(--labki-primary-light);
-}
-
-/* === Footer === */
+/* === Footer ===
+   Background is painted by the `.bg-light` rule above (Tweeki always
+   carries it on the footer); only border-top + text color remain. */
 footer.footer,
 #footer {
-	background-color: var(--labki-bg-subtle);
 	border-top: 1px solid var(--labki-border);
 	color: var(--labki-text-muted);
 }
@@ -324,12 +536,6 @@ footer.footer a,
 }
 
 /* === Table of Contents === */
-#toc,
-.toc {
-	background-color: var(--labki-bg-subtle);
-	border: 1px solid var(--labki-border);
-}
-
 /* Tweeki's scroll-spy TOC (#tweekiTOC) sits in #sidebar-right but
    appears visually on the LEFT thanks to the flex `order` rules
    below. Tweeki's compiled CSS hardcodes:
@@ -622,5 +828,107 @@ html.labki-ve-active #content #firstHeading {
 	.mw-body #firstHeading,
 	#content #firstHeading {
 		padding-right: 0;
+	}
+}
+
+/* === Echo notifications (Special:Notifications) ===
+   Echo's compiled CSS uses literal hex from compile-time Codex LESS
+   @-vars (Tweeki has no Codex-aware `mediawiki.skin.variables.less`
+   to remap them to `var()`). Re-paint the toolbar, notification
+   cards, inner text spans, hover state (Echo flags it FIXME), and
+   page-filter selected option so they flip with theme. */
+#content {
+	.mw-echo-ui-notificationsInboxWidget-toolbarWrapper {
+		background-color: var(--labki-bg-subtle);
+		color: var(--labki-text);
+	}
+
+	.mw-echo-ui-notificationItemWidget {
+		background-color: var(--labki-surface);
+		color: var(--labki-text);
+		border-color: var(--labki-border);
+
+		&:hover,
+		&-bundled:hover {
+			background-color: var(--labki-bg-subtle);
+		}
+	}
+
+	/* Inner content spans set their own `color` from compile-time
+	   Codex tokens, so the wrapper's `color` doesn't reach them. */
+	.mw-echo-ui-notificationItemWidget-content-message-header,
+	.mw-echo-ui-notificationItemWidget-content-actions-timestamp {
+		color: var(--labki-text);
+	}
+
+	.mw-echo-ui-notificationItemWidget-content-message-body,
+	.mw-echo-ui-notificationItemWidget em {
+		color: var(--labki-text-muted);
+	}
+
+	.mw-echo-ui-pageFilterWidget .oo-ui-outlineOptionWidget {
+		&.oo-ui-optionWidget-selected,
+		&.oo-ui-optionWidget-pressed,
+		&.oo-ui-optionWidget-highlighted {
+			background-color: var(--labki-bg-subtle);
+			color: var(--labki-text);
+		}
+	}
+}
+
+/* === VisualEditor save dialog ===
+   VE's "Watch this page" + summary rows compile their bg to literal
+   hex Codex tokens. Selectors are NOT scoped to `#content` (the
+   dialog renders in an `.oo-ui-windowManager` body overlay) and
+   carry `!important` because VE's CSS module loads after ours. */
+.ve-ui-mwSaveDialog .ve-ui-mwSaveDialog-options,
+.oo-ui-windowManager .ve-ui-mwSaveDialog-options {
+	background-color: var(--labki-bg-subtle) !important;
+	border-color: var(--labki-border) !important;
+	color: var(--labki-text) !important;
+}
+
+.ve-ui-mwSaveDialog .ve-ui-mwSaveDialog-summary,
+.oo-ui-windowManager .ve-ui-mwSaveDialog-summary {
+	background-color: var(--labki-surface) !important;
+}
+
+/* === Print mode ===
+   Force the token palette back to LIGHT values when printing, regardless
+   of the user's theme. Token-driven rules flip automatically; the only
+   explicit override is for `.bg-light !important`, which Bootstrap
+   stamps on the footer at a specificity our token can't beat. */
+@media print {
+	:root,
+	.skin-theme-clientpref-night {
+		--labki-text:        #2c2c2c;
+		--labki-text-muted:  #5a6a7a;
+		--labki-bg-subtle:   #f4f6f8;
+		--labki-border:      #d8dde3;
+		--labki-surface:     #ffffff;
+		--labki-heading:     #1a3a5c;
+		--labki-accent-rgb:  61, 122, 181;
+		--labki-accent:      #3d7ab5;
+
+		/* Codex tokens — light values, in case any printed surface
+		   inherits one (Tweeki doesn't load Codex's own light CSS). */
+		--color-base:                       #202122;
+		--background-color-base:            #ffffff;
+		--background-color-neutral-subtle:  #f8f9fa;
+		--border-color-base:                #a2a9b1;
+	}
+
+	footer.footer.bg-light,
+	#footer.bg-light {
+		background-color: #ffffff !important;
+	}
+
+	.sidebar-toggle,
+	#labki-theme-toggle,
+	.page-actions,
+	#mw-navigation,
+	footer.footer,
+	#footer {
+		display: none !important;
 	}
 }
