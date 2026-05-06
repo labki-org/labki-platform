@@ -40,6 +40,7 @@ wfLoadExtension('LabkiPageFormsInputs');
 
 // --- Bundled MediaWiki Extensions (shipped with MW 1.44) ---
 
+wfLoadExtension('CategoryTree');
 wfLoadExtension('Echo');
 wfLoadExtension('Linter');
 wfLoadExtension('SyntaxHighlight_GeSHi');
