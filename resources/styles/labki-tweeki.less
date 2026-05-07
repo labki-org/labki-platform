@@ -499,6 +499,119 @@ footer.footer.bg-light,
 	color: var(--labki-accent);
 }
 
+/* === PageForms Select2 widgets ===
+   PageForms loads the Select2 library for `tokens`, `combobox`,
+   and Property-driven autocomplete inputs (per Extension:Page
+   Forms/Select2 for autocompletion). Vendored
+   `libs/foreign/select2/select2.css` paints `.select2-selection--
+   {single,multiple}` with `#fff`, the selected dropdown row with
+   `#ddd`, the disabled state with `#eee`, and all borders with
+   `#aaa` — readable in light mode, but bright pills on a dark page.
+
+   PageForms maintainers haven't added Codex-token-aware CSS yet,
+   and per MW core's "Recommendations for night mode compatibility"
+   the standard intervention for un-tokenized extension surfaces is
+   for the skin/platform to re-paint those classes under the
+   canonical color-mode signals (`.skin-theme-clientpref-night` /
+   `[data-bs-theme="dark"]`).
+
+   Selectors are NOT scoped to #content: Select2's results dropdown
+   is portaled directly under <body> on open, so #content-scoped
+   rules can't reach it. The color-mode signal lives on <html>, so
+   the ancestor match still works for the portaled dropdown. */
+.skin-theme-clientpref-night,
+[data-bs-theme="dark"] {
+	.select2-container--default {
+		.select2-selection--single,
+		.select2-selection--multiple {
+			background-color: var(--labki-bg-subtle);
+			color: var(--labki-text);
+			border-color: var(--labki-border);
+		}
+
+		.select2-selection--single .select2-selection__rendered {
+			color: var(--labki-text);
+		}
+
+		.select2-selection__placeholder {
+			color: var(--labki-text-muted);
+		}
+
+		/* Single-select dropdown chevron — default uses `border-top-
+		   color: #888` which lands as a dim arrow on dark; lift to
+		   the muted text token for consistent contrast. */
+		.select2-selection--single .select2-selection__arrow b {
+			border-top-color: var(--labki-text-muted);
+		}
+
+		&.select2-container--open .select2-selection--single .select2-selection__arrow b {
+			border-bottom-color: var(--labki-text-muted);
+		}
+
+		/* Pill chips on multi-select (e.g. token inputs). The chip's
+		   bg is set via `--bs-tertiary-bg`-style hex literal in
+		   select2.css; we use the border token because it sits on
+		   `--labki-bg-subtle` and reads as a slightly-elevated chip. */
+		.select2-selection--multiple .select2-selection__choice {
+			background-color: var(--labki-border);
+			color: var(--labki-text);
+			border-color: var(--labki-border);
+		}
+
+		.select2-selection--multiple .select2-selection__choice__remove {
+			color: var(--labki-text);
+
+			&:hover {
+				color: var(--labki-accent);
+			}
+		}
+
+		/* Inline search field within multi-select; sits on the chip
+		   row so transparent + token text is what we want. */
+		.select2-search--inline .select2-search__field {
+			color: var(--labki-text);
+			background: transparent;
+		}
+
+		/* Disabled state. Vendored bg is `#eee`; replace with our
+		   subtle surface and dim via opacity so the disabled signal
+		   reads on dark. */
+		&.select2-container--disabled .select2-selection--single,
+		&.select2-container--disabled .select2-selection--multiple {
+			background-color: var(--labki-bg-subtle);
+			opacity: 0.6;
+		}
+
+		/* Results dropdown rows. */
+		.select2-results__option {
+			color: var(--labki-text);
+		}
+
+		.select2-results__option[aria-selected=true] {
+			background-color: var(--labki-border);
+			color: var(--labki-text);
+		}
+
+		.select2-results__option--highlighted[aria-selected] {
+			background-color: var(--labki-accent);
+			color: #fff;
+		}
+	}
+
+	/* Dropdown panel (portaled to <body>; un-#content-scoped). */
+	.select2-dropdown {
+		background-color: var(--labki-bg-subtle);
+		color: var(--labki-text);
+		border-color: var(--labki-border);
+	}
+
+	.select2-search--dropdown .select2-search__field {
+		background-color: var(--labki-surface);
+		color: var(--labki-text);
+		border-color: var(--labki-border);
+	}
+}
+
 /* Browser-default <hr> renders with hardcoded grays. */
 #content hr {
 	border: none;
