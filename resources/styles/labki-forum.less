@@ -106,7 +106,8 @@ html.labki-forum-topic {
 	   selector outranks ours by ID specificity. The code background and
 	   font-family from Tweeki still apply, keeping the code visually
 	   distinct. */
-	.mw-parser-output > pre {
+	.mw-parser-output > pre,
+	.mw-parser-output > .mw-highlight {
 		border: 0 !important;
 		border-left: 3px solid var( --border-color-progressive, #36c ) !important;
 		border-radius: 0 !important;
@@ -171,7 +172,8 @@ html.labki-forum-topic {
 		   the visual continuity. !important needed because Tweeki's ID
 		   specificity outranks ours. The code background and font from
 		   Tweeki still apply, keeping code visually distinct. */
-		dd pre {
+		dd pre,
+		dd .mw-highlight {
 			border: 0 !important;
 			border-radius: 0 !important;
 			margin: 0.25em 0 !important;
@@ -210,7 +212,10 @@ html.labki-forum-topic {
 
 	/* Don't apply reply-card chrome inside DT/VE editing surfaces — the
 	   user is composing, not reading a saved reply, so the accent stripe
-	   and tinted background read as cruft layered onto the textarea. */
+	   and tinted background read as cruft layered onto the textarea.
+	   Two forms: dd/dl *inside* the editor (some VE surfaces nest one),
+	   AND the wrapping dd that DT inserts to host the reply widget,
+	   targeted via :has() since our forum stripe lives on that parent. */
 	.ext-discussiontools-replywidget,
 	.ve-ce-surface,
 	.ve-ui-surface {
@@ -222,6 +227,15 @@ html.labki-forum-topic {
 			background: transparent !important;
 			border-radius: 0 !important;
 		}
+	}
+	#mw-content-text dd:has( .ext-discussiontools-replywidget ),
+	#mw-content-text dd:has( .ext-discussiontools-ui-replyWidget ),
+	#mw-content-text dd:has( .ve-ce-surface ) {
+		margin-left: 0 !important;
+		padding: 0 !important;
+		border: 0 !important;
+		background: transparent !important;
+		border-radius: 0 !important;
 	}
 
 	/* Reply links rendered as small bordered buttons next to each signature */
