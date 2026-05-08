@@ -96,7 +96,28 @@ $wgResourceModules['ext.labki.forum'] = [
     'remoteBasePath' => $wgResourceBasePath,
 ];
 $wgHooks['BeforePageDisplay'][] = static function ( $out, $skin ) {
+    // Styles synchronously in <head>: avoids the FOUC where the page
+    // briefly renders unstyled (full-width title, paragraphs without the
+    // accent stripe) before the async-loaded CSS module arrives.
+    $out->addModuleStyles( [ 'ext.labki.forum' ] );
+    // Scripts async — the click handler doesn't need to be present at
+    // first paint, only when the user actually interacts.
     $out->addModules( [ 'ext.labki.forum' ] );
+
+    // Pre-apply the .labki-forum-topic class on <html> via an inline
+    // head script so the CSS rules match before first paint, instead
+    // of waiting for labki-forum.js's DOM-ready handler. The JS still
+    // adds the class as a backstop. Talk-side namespaces have odd
+    // numeric IDs; "/" in the title indicates a subpage, i.e. a topic.
+    $title = $out->getTitle();
+    if ( $title && ( $title->getNamespace() % 2 ) === 1
+        && strpos( $title->getDBkey(), '/' ) !== false
+    ) {
+        $out->addHeadItem(
+            'labki-forum-topic-init',
+            "<script>document.documentElement.classList.add('labki-forum-topic');</script>"
+        );
+    }
 };
 
 wfLoadExtension('ConfirmEdit');
