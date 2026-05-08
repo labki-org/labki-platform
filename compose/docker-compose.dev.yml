@@ -40,6 +40,11 @@ services:
       # extensions.platform.php / LocalSettings.base.php take effect on
       # touch (subject to PHP opcache mtime invalidation).
       - ../mediawiki:/opt/labki/mediawiki
+      # Dev-only overlay: namespace declarations and any other settings
+      # that aren't part of the platform default but should be present
+      # in a developer's running wiki for end-to-end testing of bundled
+      # features (currently: Forum / Forum_talk for labki-forum).
+      - ./dev-config:/mw-config
     # volumes:
     #   - ../../MyExtension:/var/www/html/extensions/MyExtension
     #   - ../../MySkin:/mw-user-skins/MySkin

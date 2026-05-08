@@ -48,6 +48,32 @@ class LabkiProbeConfig extends Maintenance {
         }
         $extNames = array_values( array_unique( $extNames ) );
         echo 'EXTENSIONS=' . implode( ',', $extNames ) . "\n";
+
+        // Namespace IDs registered by the dev overlay (Forum=3000,
+        // Forum_talk=3001) so the smoke test can verify the bind-mount
+        // landed and namespace registration didn't collide.
+        $nsInfo = MediaWiki\MediaWikiServices::getInstance()->getNamespaceInfo();
+        $nsIds = array_keys( $nsInfo->getCanonicalNamespaces() );
+        sort( $nsIds );
+        echo 'NAMESPACES=' . implode( ',', $nsIds ) . "\n";
+
+        // Custom SMW properties registered by the labki-forum module. The
+        // PropertyRegistry returns null for unknown IDs; filter for the
+        // ones that actually registered. Use ExtensionRegistry::isLoaded
+        // rather than class_exists — SMW is composer-autoloaded so its
+        // classes are always discoverable, but in disabled-extensions mode
+        // wfLoadExtension never ran and SMW's bootstrap globals are unset,
+        // making PropertyRegistry::getInstance() throw on $smwgServicesFileDir.
+        $forumProps = [];
+        if ( ExtensionRegistry::getInstance()->isLoaded( 'SemanticMediaWiki' ) ) {
+            $reg = \SMW\PropertyRegistry::getInstance();
+            foreach ( [ '___forum_subject', '___forum_starter', '___forum_comments', '___forum_participants' ] as $pid ) {
+                if ( $reg->getPropertyValueTypeById( $pid ) !== null ) {
+                    $forumProps[] = $pid;
+                }
+            }
+        }
+        echo 'SMW_FORUM_PROPS=' . implode( ',', $forumProps ) . "\n";
     }
 }
 

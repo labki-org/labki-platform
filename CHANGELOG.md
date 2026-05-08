@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Labki Forum**: bundled forum-style discussion topics on top of MediaWiki DiscussionTools. Drop-in `.labki-forum-new-post-btn` (or `[data-labki-forum-new-post]`) creates a Talk-namespace subpage with `<UTC-timestamp>_<username>` slug and routes to DT's new-topic widget. Topic pages render as forum cards (outer frame, accent-bar first post, indented reply cards, button-styled reply links) with a `← parent` breadcrumb back-link. First H2 promotes to DISPLAYTITLE. Four custom SMW properties (`Topic subject`, `Topic starter`, `Comment count`, `Participant count`) populate per topic so a landing page can render a forum index via `#ask`. Works with any namespace pair the deployer sets up; documented in [`docs/labki-forum.md`](docs/labki-forum.md).
 - Custom Tweeki skin theme with academic color palette and layout defaults
 - CONTRIBUTING.md with contributor guidelines
 - CHANGELOG.md for tracking releases
@@ -32,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - Timestamp-localization JavaScript in `labki-tweeki.js`. The string-rewrite was overriding MediaWiki user date preferences with a hardcoded format. Date display now defers to SMW query authors (`?Date`, `?Date#-F[...]`) and MediaWiki preferences.
 - `--labki-warning` and `--labki-radius` design tokens — defined but unreferenced anywhere in the codebase.
+- **WikiForum extension**. Replaced by the new bundled Labki Forum module (DiscussionTools-based). Removed from `extensions-git/sources.txt` and `mediawiki/extensions.platform.php`.
 
 ### Notes
 - A future MediaWiki version is expected to ship a `darkmode-override()` LESS mixin (currently absent in 1.44.5) for skins to wrap per-element dark-mode overrides while waiting for upstream Codex migration. Adopt once available; until then the per-element rules in `labki-tweeki.less` carry the same intent in plain LESS.

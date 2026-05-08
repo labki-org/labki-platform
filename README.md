@@ -23,6 +23,8 @@ The platform defines a single authoritative MediaWiki environment. All platform-
 -   **[Technical Contract](docs/contract.md)**: Specifications for environment variables, paths, and platform behavior.
 -   **[User Guide](runtime/README.md)**: How to deploy and configure the runtime distribution.
 -   **[Extension Dev Guide](docs/extension-dev-guide.md)**: How to use this platform to test your own extensions.
+-   **[Tweeki Runbook](docs/tweeki-runbook.md)**: Switching the platform skin to Tweeki and the customization surface it exposes.
+-   **[Labki Forum Runbook](docs/labki-forum.md)**: DiscussionTools-as-forum bundled feature — namespace setup, button placement, SMW forum index.
 -   **[Changelog](CHANGELOG.md)**: Release history and notable changes.
 
 ## Repository Structure

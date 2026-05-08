@@ -94,6 +94,13 @@ verify_module() {
 echo "[smoke-test] Verifying platform ResourceLoader modules..."
 verify_module skin.labki.tweeki.styles  styles
 verify_module skin.labki.tweeki.scripts scripts
+# Forum module is gated on extensions being loaded (it's registered in
+# extensions.platform.php). Skip in 'disabled' mode where the file doesn't
+# load and the module names are absent from ResourceLoader.
+if [ "$EXTENSIONS_MODE" = "enabled" ]; then
+    verify_module ext.labki.forum.styles styles
+    verify_module ext.labki.forum        scripts
+fi
 
 # --- Probe runtime config from inside the container ---
 # We avoid the HTTP API for this because the wiki is private
@@ -114,6 +121,8 @@ DEFAULT_SKIN=$(extract DEFAULT_SKIN)
 SKINS=$(extract SKINS)
 FILE_EXTS=$(extract FILE_EXTENSIONS)
 EXT_NAMES=$(extract EXTENSIONS)
+NAMESPACES=$(extract NAMESPACES)
+SMW_FORUM_PROPS=$(extract SMW_FORUM_PROPS)
 
 echo "[smoke-test] Verifying default skin..."
 [ "$DEFAULT_SKIN" = "tweeki" ] \
@@ -147,6 +156,47 @@ else
     if contains_csv "$EXT_NAMES" "SemanticMediaWiki"; then
         fail "SemanticMediaWiki present despite MW_DISABLE_PLATFORM_EXTENSIONS=1."
     fi
+fi
+
+# Forum / Forum_talk namespaces (3000/3001) are declared by the dev overlay
+# at compose/dev-config/LocalSettings.user.php — only mounted when the
+# compose target is 'dev'. On 'prod' they're absent by design.
+if [ "$DOCKER_TARGET" = "dev" ] && [ "$EXTENSIONS_MODE" = "enabled" ]; then
+    echo "[smoke-test] Verifying forum namespaces are registered..."
+    for ns in 3000 3001; do
+        contains_csv "$NAMESPACES" "$ns" \
+            || fail "namespace ID '$ns' missing from probe (dev overlay didn't load?)."
+    done
+
+    echo "[smoke-test] Verifying labki-forum SMW custom properties..."
+    for pid in ___forum_subject ___forum_starter ___forum_comments ___forum_participants; do
+        contains_csv "$SMW_FORUM_PROPS" "$pid" \
+            || fail "SMW custom property '$pid' is not registered (forum hook didn't fire?)."
+    done
+
+    # End-to-end probe: parse a synthetic Forum_talk subpage in-memory and
+    # verify the labki-forum hooks set DISPLAYTITLE, DEFAULTSORT, and the
+    # four SMW properties to the values we expect for known wikitext.
+    echo "[smoke-test] Probing labki-forum hooks via in-memory parse..."
+    FORUM_PROBE=$(docker compose -f "$COMPOSE_FILE" exec -T wiki php /opt/labki/scripts/probe-forum-page.php) \
+        || { echo "[smoke-test] forum-probe output:"; echo "$FORUM_PROBE"; fail "probe-forum-page.php failed inside container."; }
+    echo "[smoke-test] Forum probe returned:"
+    echo "$FORUM_PROBE" | sed 's/^/[smoke-test]   /'
+
+    fextract() { echo "$FORUM_PROBE" | grep "^$1=" | head -1 | cut -d= -f2-; }
+
+    [ "$(fextract DISPLAYTITLE)" = "Hello smoke" ] \
+        || fail "DISPLAYTITLE is '$(fextract DISPLAYTITLE)', expected 'Hello smoke' (first H2 was not promoted)."
+    [ "$(fextract DEFAULTSORT)" = "Forum talk:Smoketest/2026-01-01 120000 Bob" ] \
+        || fail "DEFAULTSORT is '$(fextract DEFAULTSORT)', expected canonical title (SMW sortkey hijack regression)."
+    [ "$(fextract FORUM_SUBJECT)" = "Hello smoke" ] \
+        || fail "FORUM_SUBJECT SMW property is '$(fextract FORUM_SUBJECT)', expected 'Hello smoke'."
+    [ "$(fextract FORUM_COMMENTS)" = "3" ] \
+        || fail "FORUM_COMMENTS is '$(fextract FORUM_COMMENTS)', expected 3 (one per (UTC) signature)."
+    [ "$(fextract FORUM_PARTICIPANTS)" = "2" ] \
+        || fail "FORUM_PARTICIPANTS is '$(fextract FORUM_PARTICIPANTS)', expected 2 unique authors."
+    [ "$(fextract FORUM_STARTER)" = "User:Bob" ] \
+        || fail "FORUM_STARTER is '$(fextract FORUM_STARTER)', expected 'User:Bob' (case-folding regression?)."
 fi
 
 echo "[smoke-test] SUCCESS. Tearing down..."
