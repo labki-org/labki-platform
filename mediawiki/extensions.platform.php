@@ -91,7 +91,7 @@ $wgDefaultUserOptions['discussiontools-visualenhancements'] = 1;
 $wgResourceModules['ext.labki.forum'] = [
     'styles'         => [ 'resources/styles/labki-forum.less' ],
     'scripts'        => [ 'resources/scripts/labki-forum.js' ],
-    'dependencies'   => [ 'mediawiki.util', 'mediawiki.Title', 'mediawiki.notify' ],
+    'dependencies'   => [ 'mediawiki.util', 'mediawiki.Title', 'mediawiki.notification' ],
     'localBasePath'  => $IP,
     'remoteBasePath' => $wgResourceBasePath,
 ];
