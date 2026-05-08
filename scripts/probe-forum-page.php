@@ -98,6 +98,7 @@ class LabkiProbeForumPage extends Maintenance {
             'FORUM_STARTER'      => '___forum_starter',
             'FORUM_COMMENTS'     => '___forum_comments',
             'FORUM_PARTICIPANTS' => '___forum_participants',
+            'FORUM_PARENT'       => '___forum_parent',
         ];
         foreach ( $columns as $key => $pid ) {
             $vals = $smwData->getPropertyValues( new \SMW\DIProperty( $pid ) );

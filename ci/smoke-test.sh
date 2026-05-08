@@ -169,7 +169,7 @@ if [ "$DOCKER_TARGET" = "dev" ] && [ "$EXTENSIONS_MODE" = "enabled" ]; then
     done
 
     echo "[smoke-test] Verifying labki-forum SMW custom properties..."
-    for pid in ___forum_subject ___forum_starter ___forum_comments ___forum_participants; do
+    for pid in ___forum_subject ___forum_starter ___forum_comments ___forum_participants ___forum_parent; do
         contains_csv "$SMW_FORUM_PROPS" "$pid" \
             || fail "SMW custom property '$pid' is not registered (forum hook didn't fire?)."
     done
@@ -197,6 +197,8 @@ if [ "$DOCKER_TARGET" = "dev" ] && [ "$EXTENSIONS_MODE" = "enabled" ]; then
         || fail "FORUM_PARTICIPANTS is '$(fextract FORUM_PARTICIPANTS)', expected 2 unique authors."
     [ "$(fextract FORUM_STARTER)" = "User:Bob" ] \
         || fail "FORUM_STARTER is '$(fextract FORUM_STARTER)', expected 'User:Bob' (case-folding regression?)."
+    [ "$(fextract FORUM_PARENT)" = "Forum:Smoketest" ] \
+        || fail "FORUM_PARENT is '$(fextract FORUM_PARENT)', expected 'Forum:Smoketest' (talk-base -> subject derivation regression?)."
 fi
 
 echo "[smoke-test] SUCCESS. Tearing down..."

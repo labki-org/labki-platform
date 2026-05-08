@@ -94,14 +94,26 @@ $wgHooks['SMW::Property::initProperties'][] = static function ( $propertyRegistr
     $propertyRegistry->registerProperty( '___forum_starter',      '_wpg', 'Topic starter' );
     $propertyRegistry->registerProperty( '___forum_comments',     '_num', 'Comment count' );
     $propertyRegistry->registerProperty( '___forum_participants', '_num', 'Participant count' );
+    // Has forum (`_wpg`, page-typed) points each post page back at its
+    // containing forum landing (the subject-namespace counterpart of the
+    // post's base title). Enables chained queries like
+    // `[[Has forum.Has parent forum::Forum:Home]]` for activity feeds on
+    // hub pages — see SchemaSync's Category:Forum template.
+    $propertyRegistry->registerProperty( '___forum_parent',       '_wpg', 'Has forum' );
     return true;
 };
 
-// On forum topic pages, populate forum metadata: Topic subject (first H2),
+// On forum topic pages, populate forum metadata: Has forum (containing
+// forum, derived from the page's base title), Topic subject (first H2),
 // Topic starter (first signature author), Comment count (signed comments),
 // Participant count (unique authors). Also mirror the subject into
 // DISPLAYTITLE so browser tabs and inbound wikilinks render the human-
 // readable subject instead of the <UTC>_<user> slug.
+//
+// Has forum is derivable from the title alone (no wikitext parsing
+// needed), so it's always set on every topic page regardless of whether
+// the page has any signed comments yet — this means freshly-saved empty
+// topics still surface in cross-forum activity feeds.
 //
 // === Why ParserAfterParse, not ContentAlterParserOutput ===
 // SMW's ParserAfterTidy reads page properties (e.g. displaytitle) before
@@ -174,36 +186,52 @@ $wgHooks['ParserAfterParse'][] = static function ( $parser, &$text, $stripState 
     $participantCount = count( array_unique( array_map( 'strtolower', $rawAuthors ) ) );
     $starter = $rawAuthors[0] ?? '';
 
-    if ( $subject === '' && $commentCount === 0 ) {
-        return;
-    }
-
     $parserData = \SMW\Services\ServicesFactory::getInstance()->newParserData( $title, $parserOutput );
     $semanticData = $parserData->getSemanticData();
 
-    if ( $subject !== '' ) {
+    // Has forum: the post's containing forum landing page. getBaseTitle()
+    // strips just the last subpage segment (the post's slug), so
+    // Forum_talk:Hardware/<slug> -> Forum_talk:Hardware and
+    // Forum_talk:Hardware/Sub/<slug> -> Forum_talk:Hardware/Sub.
+    // getSubjectPage() then flips the talk namespace to its subject pair.
+    // Always annotated — derivable from the title alone, no content gate.
+    $forumTalk = $title->getBaseTitle();
+    if ( $forumTalk ) {
+        $forumSubject = $forumTalk->getSubjectPage();
         $semanticData->addPropertyObjectValue(
-            new \SMW\DIProperty( '___forum_subject' ),
-            new \SMWDIBlob( $subject )
+            new \SMW\DIProperty( '___forum_parent' ),
+            \SMW\DIWikiPage::newFromTitle( $forumSubject )
         );
     }
-    if ( $commentCount > 0 ) {
-        $semanticData->addPropertyObjectValue(
-            new \SMW\DIProperty( '___forum_comments' ),
-            new \SMWDINumber( $commentCount )
-        );
-        $semanticData->addPropertyObjectValue(
-            new \SMW\DIProperty( '___forum_participants' ),
-            new \SMWDINumber( $participantCount )
-        );
-    }
-    if ( $starter !== '' ) {
-        $starterTitle = \MediaWiki\Title\Title::makeTitleSafe( NS_USER, $starter );
-        if ( $starterTitle ) {
+
+    // Wikitext-derived annotations only fire when the page has substance —
+    // skip the SMW work on freshly-saved empty topics that have neither
+    // an H2 nor a signed comment yet.
+    if ( $subject !== '' || $commentCount > 0 ) {
+        if ( $subject !== '' ) {
             $semanticData->addPropertyObjectValue(
-                new \SMW\DIProperty( '___forum_starter' ),
-                \SMW\DIWikiPage::newFromTitle( $starterTitle )
+                new \SMW\DIProperty( '___forum_subject' ),
+                new \SMWDIBlob( $subject )
             );
+        }
+        if ( $commentCount > 0 ) {
+            $semanticData->addPropertyObjectValue(
+                new \SMW\DIProperty( '___forum_comments' ),
+                new \SMWDINumber( $commentCount )
+            );
+            $semanticData->addPropertyObjectValue(
+                new \SMW\DIProperty( '___forum_participants' ),
+                new \SMWDINumber( $participantCount )
+            );
+        }
+        if ( $starter !== '' ) {
+            $starterTitle = \MediaWiki\Title\Title::makeTitleSafe( NS_USER, $starter );
+            if ( $starterTitle ) {
+                $semanticData->addPropertyObjectValue(
+                    new \SMW\DIProperty( '___forum_starter' ),
+                    \SMW\DIWikiPage::newFromTitle( $starterTitle )
+                );
+            }
         }
     }
     $parserData->pushSemanticDataToParserOutput();
