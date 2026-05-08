@@ -10,11 +10,12 @@ Bundled into the platform with no extra configuration beyond namespace setup:
 - **Forum-card styling** on the resulting topic pages (outer card frame, accent-bar first post, indented reply cards, button-styled reply links). Covers Tweeki and Vector-family skins; uses Codex tokens for light/dark theming.
 - A **"← parent" breadcrumb** at the top of every topic page, linking back to the subject-namespace landing page.
 - **`__DISPLAYTITLE__` auto-set** to the topic's first H2, so browser tabs and inbound wikilinks render the human-readable subject instead of the `<UTC>_<user>` slug.
-- **Four custom SMW properties** populated per topic so a landing page can render a forum index via `#ask`:
+- **Five custom SMW properties** populated per topic so a landing page can render a forum index via `#ask`:
   - `Topic subject` (Text) — first H2 of the page
   - `Topic starter` (Page) — first signature author, as a `User:Name` link
   - `Comment count` (Number) — count of signed `(UTC)` timestamps
   - `Participant count` (Number) — unique authors
+  - `Has forum` (Page) — the topic's containing forum landing, derived from the page's base title (`Forum_talk:Hardware/<slug>` → `Forum:Hardware`). Always set, even on freshly-saved empty topics. Enables chained queries like `[[Has forum.Has parent forum::Forum:Home]]` for activity feeds on hub-style landing pages.
 
 ## Setup for a new namespace pair
 

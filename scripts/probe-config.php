@@ -67,7 +67,7 @@ class LabkiProbeConfig extends Maintenance {
         $forumProps = [];
         if ( ExtensionRegistry::getInstance()->isLoaded( 'SemanticMediaWiki' ) ) {
             $reg = \SMW\PropertyRegistry::getInstance();
-            foreach ( [ '___forum_subject', '___forum_starter', '___forum_comments', '___forum_participants' ] as $pid ) {
+            foreach ( [ '___forum_subject', '___forum_starter', '___forum_comments', '___forum_participants', '___forum_parent' ] as $pid ) {
                 if ( $reg->getPropertyValueTypeById( $pid ) !== null ) {
                     $forumProps[] = $pid;
                 }
