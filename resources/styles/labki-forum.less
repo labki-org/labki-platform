@@ -85,36 +85,35 @@ html.labki-forum-topic {
 		background: var( --background-color-neutral-subtle, #f8f9fa );
 		border-left: 3px solid var( --border-color-progressive, #36c );
 		padding: 0.6em 0.85em;
-		/* !important: Tweeki's sitewide `p { margin-bottom: 1em }` would
-		   otherwise leave a stripe-less gap between adjacent paragraphs. */
+		/* !important: Tweeki's sitewide `p { margin-bottom: 1em }` (and
+		   Bootstrap's matching ul/ol margin) would otherwise leave a
+		   stripe-less gap between adjacent first-post blocks. */
 		margin: 0 !important;
 		border-radius: 0;
 	}
+
+	/* Lists: preserve the native padding-left so bullet/number markers
+	   render inside the colored block instead of being clipped off the
+	   left edge by our own 0.85em horizontal padding. */
+	.mw-parser-output > ul,
+	.mw-parser-output > ol {
+		padding-left: 2.5em;
+	}
+
+	/* Pre/code blocks: undo Tweeki's #content-scoped 1px box-border + radius
+	   so the accent stripe stays continuous with sibling first-post blocks.
+	   The code background and font-family from Tweeki still apply, keeping
+	   the code visually distinct. */
 	.mw-parser-output > pre {
+		border: 0;
 		border-left: 3px solid var( --border-color-progressive, #36c );
+		border-radius: 0;
 		margin: 0 !important;
 	}
 
 	/* Adjacent paragraphs read as one block — drop the seam padding. */
 	.mw-parser-output > p + p {
 		padding-top: 0;
-	}
-
-	/* Tighten the outer margins on the first/last block of the post so the
-	   accent stripe doesn't gain stray whitespace above or below. */
-	.mw-parser-output > p:first-of-type,
-	.mw-parser-output > ul:first-of-type,
-	.mw-parser-output > ol:first-of-type,
-	.mw-parser-output > pre:first-of-type,
-	.mw-parser-output > blockquote:first-of-type {
-		margin-top: 0.5em;
-	}
-	.mw-parser-output > p:last-of-type,
-	.mw-parser-output > ul:last-of-type,
-	.mw-parser-output > ol:last-of-type,
-	.mw-parser-output > pre:last-of-type,
-	.mw-parser-output > blockquote:last-of-type {
-		margin-bottom: 0.75em;
 	}
 
 	/* Replies — DT writes ":" indent which renders as <dl><dd>. Tweeki
