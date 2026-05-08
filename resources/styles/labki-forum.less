@@ -1,0 +1,154 @@
+/**
+ * Labki Forum styles
+ *
+ * Two surfaces:
+ *
+ *   1. ".labki-forum-new-post-btn" — the button users drop on a landing
+ *      page. Styled here so deployments don't need to remember the
+ *      mw-ui-button class chain.
+ *
+ *   2. "html.labki-forum-topic" — Talk-namespace subpages, tagged by
+ *      labki-forum.js. Renders the page as a forum topic card: outer
+ *      frame, accent-bar first post, indented reply cards, button-styled
+ *      reply links, hidden page-title bar / TOC / DT page-frame chrome
+ *      that's redundant on a single-topic-per-page layout.
+ *
+ * All colors use Codex / MW design tokens with hex fallbacks so the
+ * styling respects light/dark theme switching.
+ */
+
+/* === New-post button === */
+
+.labki-forum-new-post-btn {
+	display: inline-block;
+	padding: 0.4em 1em;
+	border: 1px solid var( --border-color-progressive, #36c );
+	border-radius: 4px;
+	background: var( --background-color-progressive, #36c );
+	color: #fff;
+	font-weight: 500;
+	text-decoration: none;
+	cursor: pointer;
+	user-select: none;
+
+	&:hover {
+		background: var( --background-color-progressive--hover, #447ff5 );
+		border-color: var( --border-color-progressive--hover, #447ff5 );
+		color: #fff;
+		text-decoration: none;
+	}
+}
+
+/* === Forum topic page (set by labki-forum.js on Talk-namespace subpages) === */
+
+html.labki-forum-topic {
+
+	/* Hide elements not useful in a single-topic-per-page layout */
+	#firstHeading,
+	.firstHeading,
+	#toc,
+	.toc,
+	#siteSub,
+	.mw-pt-translate-header,
+	.ext-discussiontools-init-pageframe-latestcomment,
+	[class*="pageframe-latestcomment"] {
+		display: none !important;
+	}
+
+	/* Outer card frame around the topic content */
+	.mw-parser-output {
+		border: 1px solid var( --border-color-base, #c8ccd1 );
+		border-radius: 8px;
+		padding: 1em 1.25em;
+		background: var( --background-color-base, #fff );
+		box-shadow: 0 1px 2px rgba( 0, 0, 0, 0.04 );
+	}
+
+	/* DT section bar (comment count / latest activity under the H2) */
+	.ext-discussiontools-init-section-bar {
+		border-bottom: 1px solid var( --border-color-subtle, #eaecf0 );
+		padding-bottom: 0.5em;
+		margin-bottom: 1em;
+		font-size: 0.9em;
+		color: var( --color-subtle, #54595d );
+	}
+
+	/* First post — top-level paragraphs render as one continuous card.
+	   Per-paragraph zero margin so the left accent bar reads as a single
+	   continuous stripe; first/last get rounded corners on the outside. */
+	.mw-parser-output > p {
+		background: var( --background-color-neutral-subtle, #f8f9fa );
+		border-left: 3px solid var( --border-color-progressive, #36c );
+		padding: 0.6em 0.85em;
+		margin: 0;
+		border-radius: 0;
+	}
+	.mw-parser-output > p + p {
+		padding-top: 0;
+	}
+	.mw-parser-output > p:first-of-type {
+		margin-top: 0.5em;
+		border-top-right-radius: 4px;
+	}
+	.mw-parser-output > p:last-of-type {
+		margin-bottom: 0.75em;
+		border-bottom-right-radius: 4px;
+	}
+
+	/* Replies — DT writes ":" indent which renders as <dl><dd>. Tweeki
+	   resets dd margins to 0; we re-introduce an indent and a soft card
+	   look per nesting level. !important is needed to outrank Tweeki's
+	   sitewide reset. */
+	#mw-content-text {
+
+		dl {
+			margin: 0.5em 0;
+		}
+
+		dd {
+			margin-left: 1.75em !important;
+			padding: 0.5em 0.85em;
+			border-left: 2px solid var( --border-color-muted, #d3d4d5 );
+			background: var( --background-color-neutral-subtle, #f8f9fa );
+			border-radius: 0 4px 4px 0;
+			margin-bottom: 0.5em;
+		}
+
+		dd dd {
+			margin-left: 1.25em !important;
+			background: var( --background-color-base, #fff );
+		}
+
+		dd dd dd {
+			border-left-color: var( --border-color-subtle, #eaecf0 );
+		}
+
+		/* Multi-paragraph replies stay as one continuous block within a dd */
+		dd p {
+			margin: 0;
+		}
+		dd p + p {
+			padding-top: 0.4em;
+		}
+	}
+
+	/* Reply links rendered as small bordered buttons next to each signature */
+	a.ext-discussiontools-init-replylink-reply,
+	.ext-discussiontools-init-replylink-buttons a {
+		display: inline-block;
+		padding: 0.15em 0.6em;
+		margin-left: 0.4em;
+		border: 1px solid var( --border-color-base, #c8ccd1 );
+		border-radius: 4px;
+		background: var( --background-color-interactive-subtle, #f8f9fa );
+		color: var( --color-base, #202122 ) !important;
+		font-size: 0.9em;
+		font-weight: 500;
+		text-decoration: none !important;
+
+		&:hover {
+			background: var( --background-color-interactive, #eaecf0 );
+			border-color: var( --border-color-base--hover, #a2a9b1 );
+		}
+	}
+}

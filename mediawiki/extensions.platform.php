@@ -62,6 +62,43 @@ $wgVisualEditorSupportedSkins[] = 'tweeki';
 
 wfLoadExtension('DiscussionTools');
 
+// --- Labki Forum: forum-style discussion topics on top of DiscussionTools ---
+//
+// Drop a "new topic" entry point on any page. Two equivalent ways:
+//
+//   * Bundled look (uses the styling shipped in labki-forum.less):
+//     <span class="labki-forum-new-post-btn" role="button" tabindex="0">Make new post</span>
+//
+//   * Bring your own UI (any element with the data attribute is a hook):
+//     <button class="my-button" data-labki-forum-new-post>Start a discussion</button>
+//
+// On click, labki-forum.js derives the talk-namespace counterpart of the
+// current page (e.g. Forum:Miniscopes -> Forum_talk:Miniscopes), generates
+// a <UTC-timestamp>_<username> slug, and sends the user to the DT new-
+// topic widget at action=edit&section=new on that fresh subpage.
+//
+// labki-forum.less also tags Talk-namespace subpages (.labki-forum-topic
+// on <html>) so they render as forum cards: outer frame, accent-bar first
+// post, indented reply cards, button-styled reply links, and the
+// page-title bar / TOC / DT page-frame chrome hidden as redundant on a
+// single-topic-per-page layout.
+//
+// Enables DT's visual enhancements default-on so the section bar (comment
+// count + latest activity) renders without per-user opt-in.
+$wgDiscussionTools_visualenhancements = 'available';
+$wgDefaultUserOptions['discussiontools-visualenhancements'] = 1;
+
+$wgResourceModules['ext.labki.forum'] = [
+    'styles'         => [ 'resources/styles/labki-forum.less' ],
+    'scripts'        => [ 'resources/scripts/labki-forum.js' ],
+    'dependencies'   => [ 'mediawiki.util', 'mediawiki.Title', 'mediawiki.notify' ],
+    'localBasePath'  => $IP,
+    'remoteBasePath' => $wgResourceBasePath,
+];
+$wgHooks['BeforePageDisplay'][] = static function ( $out, $skin ) {
+    $out->addModules( [ 'ext.labki.forum' ] );
+};
+
 wfLoadExtension('ConfirmEdit');
 $wgCaptchaClass = 'SimpleCaptcha';
 
