@@ -102,12 +102,14 @@ html.labki-forum-topic {
 
 	/* Pre/code blocks: undo Tweeki's #content-scoped 1px box-border + radius
 	   so the accent stripe stays continuous with sibling first-post blocks.
-	   The code background and font-family from Tweeki still apply, keeping
-	   the code visually distinct. */
+	   !important on the borders is needed because Tweeki's `#content pre`
+	   selector outranks ours by ID specificity. The code background and
+	   font-family from Tweeki still apply, keeping the code visually
+	   distinct. */
 	.mw-parser-output > pre {
-		border: 0;
-		border-left: 3px solid var( --border-color-progressive, #36c );
-		border-radius: 0;
+		border: 0 !important;
+		border-left: 3px solid var( --border-color-progressive, #36c ) !important;
+		border-radius: 0 !important;
 		margin: 0 !important;
 	}
 
@@ -150,6 +152,26 @@ html.labki-forum-topic {
 		}
 		dd p + p {
 			padding-top: 0.4em;
+		}
+
+		/* Multi-line replies (consecutive `::` lines) flow as one
+		   continuous comment card instead of fragmenting into a stack
+		   of small per-line cards. Each line is parsed as a sibling
+		   <dd> within one <dl>, so we drop intra-group margins and
+		   only round the outer corners of the group. */
+		dl > dd {
+			margin-bottom: 0;
+			border-radius: 0;
+		}
+		dl > dd + dd {
+			padding-top: 0;
+		}
+		dl > dd:last-child {
+			border-bottom-right-radius: 4px;
+			margin-bottom: 0.5em;
+		}
+		dl > dd:first-child {
+			border-top-right-radius: 4px;
 		}
 	}
 
