@@ -63,63 +63,168 @@ $wgVisualEditorSupportedSkins[] = 'tweeki';
 wfLoadExtension('DiscussionTools');
 
 // --- Labki Forum: forum-style discussion topics on top of DiscussionTools ---
-//
-// Drop a "new topic" entry point on any page. Two equivalent ways:
-//
-//   * Bundled look (uses the styling shipped in labki-forum.less):
-//     <span class="labki-forum-new-post-btn" role="button" tabindex="0">Make new post</span>
-//
-//   * Bring your own UI (any element with the data attribute is a hook):
-//     <button class="my-button" data-labki-forum-new-post>Start a discussion</button>
-//
-// On click, labki-forum.js derives the talk-namespace counterpart of the
-// current page (e.g. Forum:Miniscopes -> Forum_talk:Miniscopes), generates
-// a <UTC-timestamp>_<username> slug, and sends the user to the DT new-
-// topic widget at action=edit&section=new on that fresh subpage.
-//
-// labki-forum.less also tags Talk-namespace subpages (.labki-forum-topic
-// on <html>) so they render as forum cards: outer frame, accent-bar first
-// post, indented reply cards, button-styled reply links, and the
-// page-title bar / TOC / DT page-frame chrome hidden as redundant on a
-// single-topic-per-page layout.
-//
-// Enables DT's visual enhancements default-on so the section bar (comment
-// count + latest activity) renders without per-user opt-in.
+// See resources/scripts/labki-forum.js for the click-handler entry points
+// and resources/styles/labki-forum.less for the topic-page styling.
+
 $wgDiscussionTools_visualenhancements = 'available';
 $wgDefaultUserOptions['discussiontools-visualenhancements'] = 1;
 
-$wgResourceModules['ext.labki.forum'] = [
-    'styles'         => [ 'resources/styles/labki-forum.less' ],
-    'scripts'        => [ 'resources/scripts/labki-forum.js' ],
-    'dependencies'   => [ 'mediawiki.util', 'mediawiki.Title', 'mediawiki.notification' ],
-    'localBasePath'  => $IP,
-    'remoteBasePath' => $wgResourceBasePath,
-];
-// Split into two modules so the styles can be loaded synchronously in
-// <head> (avoiding FOUC) while the click handler stays async.
+// Split modules: styles via addModuleStyles land in a synchronous <head>
+// <link>, eliminating FOUC on first paint; the click handler can load async.
 $wgResourceModules['ext.labki.forum.styles'] = [
     'styles'         => [ 'resources/styles/labki-forum.less' ],
     'localBasePath'  => $IP,
     'remoteBasePath' => $wgResourceBasePath,
 ];
+$wgResourceModules['ext.labki.forum'] = [
+    'scripts'        => [ 'resources/scripts/labki-forum.js' ],
+    'dependencies'   => [ 'mediawiki.util', 'mediawiki.Title', 'mediawiki.notification' ],
+    'localBasePath'  => $IP,
+    'remoteBasePath' => $wgResourceBasePath,
+];
+
+// Register custom SMW properties for forum topic pages so #ask queries can
+// build a forum-style index (subject, OP, comment count, participants).
+//
+// Adding a property here is a schema change for the SQL store: existing
+// installs must run `php extensions/SemanticMediaWiki/maintenance/setupStore.php`
+// once after deploy, then `rebuildData.php -n <ns>` to backfill saved pages.
+$wgHooks['SMW::Property::initProperties'][] = static function ( $propertyRegistry ) {
+    $propertyRegistry->registerProperty( '___forum_subject',      '_txt', 'Topic subject' );
+    $propertyRegistry->registerProperty( '___forum_starter',      '_wpg', 'Topic starter' );
+    $propertyRegistry->registerProperty( '___forum_comments',     '_num', 'Comment count' );
+    $propertyRegistry->registerProperty( '___forum_participants', '_num', 'Participant count' );
+    return true;
+};
+
+// On forum topic pages, populate forum metadata: Topic subject (first H2),
+// Topic starter (first signature author), Comment count (signed comments),
+// Participant count (unique authors). Also mirror the subject into
+// DISPLAYTITLE so browser tabs and inbound wikilinks render the human-
+// readable subject instead of the <UTC>_<user> slug.
+//
+// === Why ParserAfterParse, not ContentAlterParserOutput ===
+// SMW's ParserAfterTidy reads page properties (e.g. displaytitle) before
+// the Content layer fires; ParserAfterParse runs earlier in the parser
+// pipeline and gets the values into ParserOutput in time for SMW.
+//
+// === Caveats / known limits ===
+// 1. English-locale only. Comments are detected by counting "(UTC)"
+//    signature timestamps; authors by counting [[User:Name]] wikilinks.
+//    Localized signatures (e.g. "(MEZ)" on de.wiki, "(コメント)" patterns)
+//    will undercount. Acceptable for an English-language dev wiki; revisit
+//    if this ships to a multilingual deployment.
+// 2. Counts include the OP — a fresh topic with no replies reads as
+//    "1 comment, 1 participant", matching Discourse-style conventions.
+//    If a strict "replies" count is wanted, subtract 1.
+// 3. DT has authoritative APIs (ContentHeadingItem::getCommentCount,
+//    getAuthorsBelow) that handle locale and edge cases correctly, but
+//    they need DT's CommentParser to run on already-parsed HTML, which
+//    isn't available at this hook. Migrating to those would mean a
+//    deferred-update model (job-queue annotation after page render),
+//    significantly more code for marginal accuracy gain at our scale.
+// 4. Wikitext is pulled from the revision rather than the $text param
+//    because $text at ParserAfterParse is half-parsed (strip markers
+//    in, link-rendering pending) — neither wikitext nor HTML regex
+//    matches reliably against it.
+$wgHooks['ParserAfterParse'][] = static function ( $parser, &$text, $stripState ) {
+    $title = $parser->getTitle();
+    if ( !$title || ( $title->getNamespace() % 2 ) !== 1
+        || strpos( $title->getDBkey(), '/' ) === false
+    ) {
+        return;
+    }
+    $parserOutput = $parser->getOutput();
+
+    $sections = $parserOutput->getSections();
+    $subject = $sections ? trim( strip_tags( $sections[0]['line'] ?? '' ) ) : '';
+    if ( $subject !== '' ) {
+        $parserOutput->setDisplayTitle( $subject );
+        // SMW's DisplayTitle annotator hijacks the sortkey to the displaytitle
+        // when no explicit defaultsort is set, breaking LIKE-pattern queries
+        // like [[~*Miniscopes/*]]. Pin defaultsort to the canonical prefixed
+        // title so subpage queries still resolve.
+        $parserOutput->setPageProperty( 'defaultsort', $title->getPrefixedText() );
+    }
+
+    // $text at ParserAfterParse is in a half-parsed intermediate state —
+    // strip-state markers in place, link-rendering not yet finalized — so
+    // matching either wikitext or HTML against it is unreliable. Pull the
+    // raw wikitext from the revision being parsed instead.
+    $wikitext = '';
+    $rev = $parser->getRevisionRecordObject();
+    if ( $rev ) {
+        $content = $rev->getContent( \MediaWiki\Revision\SlotRecord::MAIN );
+        if ( $content instanceof \TextContent ) {
+            $wikitext = $content->getText();
+        }
+    }
+    $commentCount = preg_match_all( '/\(UTC\)/', $wikitext );
+    preg_match_all( '/\[\[User:([^|\]\/]+)/i', $wikitext, $matches );
+    $authors = array_map( static fn( $a ) => strtolower( trim( $a ) ), $matches[1] );
+    $authors = array_values( array_filter( $authors, static fn( $a ) => $a !== '' ) );
+    $participantCount = count( array_unique( $authors ) );
+    $starter = $authors[0] ?? '';
+
+    if ( $subject === '' && $commentCount === 0 ) {
+        return;
+    }
+
+    $parserData = \SMW\Services\ServicesFactory::getInstance()->newParserData( $title, $parserOutput );
+    $semanticData = $parserData->getSemanticData();
+
+    if ( $subject !== '' ) {
+        $semanticData->addPropertyObjectValue(
+            new \SMW\DIProperty( '___forum_subject' ),
+            new \SMWDIBlob( $subject )
+        );
+    }
+    if ( $commentCount > 0 ) {
+        $semanticData->addPropertyObjectValue(
+            new \SMW\DIProperty( '___forum_comments' ),
+            new \SMWDINumber( $commentCount )
+        );
+        $semanticData->addPropertyObjectValue(
+            new \SMW\DIProperty( '___forum_participants' ),
+            new \SMWDINumber( $participantCount )
+        );
+    }
+    if ( $starter !== '' ) {
+        $starterTitle = \MediaWiki\Title\Title::makeTitleSafe( NS_USER, $starter );
+        if ( $starterTitle ) {
+            $semanticData->addPropertyObjectValue(
+                new \SMW\DIProperty( '___forum_starter' ),
+                \SMW\DIWikiPage::newFromTitle( $starterTitle )
+            );
+        }
+    }
+    $parserData->pushSemanticDataToParserOutput();
+};
 
 $wgHooks['BeforePageDisplay'][] = static function ( $out, $skin ) {
     $out->addModuleStyles( [ 'ext.labki.forum.styles' ] );
     $out->addModules( [ 'ext.labki.forum' ] );
 
-    // Pre-apply the .labki-forum-topic class on <html> via an inline
-    // head script so the CSS rules match before first paint, instead
-    // of waiting for labki-forum.js's DOM-ready handler. Talk-side
-    // namespaces have odd numeric IDs; "/" in the title indicates a
-    // subpage, i.e. a topic.
+    // Talk-side namespaces have odd numeric IDs; "/" in the DBkey
+    // indicates a subpage, i.e. a topic. Tagging server-side via
+    // addHtmlClasses lets the CSS match before first paint without
+    // an inline <script>.
     $title = $out->getTitle();
     if ( $title && ( $title->getNamespace() % 2 ) === 1
         && strpos( $title->getDBkey(), '/' ) !== false
     ) {
-        $out->addHeadItem(
-            'labki-forum-topic-init',
-            "<script>document.documentElement.classList.add('labki-forum-topic');</script>"
-        );
+        $out->addHtmlClasses( 'labki-forum-topic' );
+
+        // Breadcrumb back to the forum landing page. getRootTitle strips
+        // all subpage segments; getSubjectPage flips Forum_talk -> Forum,
+        // Talk -> Main, etc.
+        $parent = $title->getRootTitle()->getSubjectPage();
+        $linkRenderer = \MediaWiki\MediaWikiServices::getInstance()->getLinkRenderer();
+        $out->addSubtitle( $linkRenderer->makeLink(
+            $parent,
+            '← ' . $parent->getText(),
+            [ 'class' => 'labki-forum-back' ]
+        ) );
     }
 };
 

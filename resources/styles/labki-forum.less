@@ -1,20 +1,9 @@
 /**
- * Labki Forum styles
+ * Labki Forum styles. Two surfaces: the .labki-forum-new-post-btn entry
+ * point, and html.labki-forum-topic (set server-side on Talk-namespace
+ * subpages) which restyles the page as a single-topic forum card.
  *
- * Two surfaces:
- *
- *   1. ".labki-forum-new-post-btn" — the button users drop on a landing
- *      page. Styled here so deployments don't need to remember the
- *      mw-ui-button class chain.
- *
- *   2. "html.labki-forum-topic" — Talk-namespace subpages, tagged by
- *      labki-forum.js. Renders the page as a forum topic card: outer
- *      frame, accent-bar first post, indented reply cards, button-styled
- *      reply links, hidden page-title bar / TOC / DT page-frame chrome
- *      that's redundant on a single-topic-per-page layout.
- *
- * All colors use Codex / MW design tokens with hex fallbacks so the
- * styling respects light/dark theme switching.
+ * Colors use Codex tokens with hex fallbacks so light/dark theming works.
  */
 
 /* === New-post button === */
@@ -50,9 +39,24 @@ html.labki-forum-topic {
 	.toc,
 	#siteSub,
 	.mw-pt-translate-header,
-	.ext-discussiontools-init-pageframe-latestcomment,
-	[class*="pageframe-latestcomment"] {
+	.ext-discussiontools-init-pageframe-latestcomment {
 		display: none !important;
+	}
+
+	/* Breadcrumb back-link to the forum landing page, populated by
+	   addSubtitle in extensions.platform.php. Sits in #contentSub above
+	   the topic card. */
+	.labki-forum-back {
+		display: inline-block;
+		margin-bottom: 0.5em;
+		color: var( --color-subtle, #54595d );
+		font-size: 0.95em;
+		text-decoration: none;
+
+		&:hover {
+			color: var( --color-progressive--hover, #447ff5 );
+			text-decoration: underline;
+		}
 	}
 
 	/* Outer card frame around the topic content */
