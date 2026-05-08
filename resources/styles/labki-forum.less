@@ -73,26 +73,48 @@ html.labki-forum-topic {
 		color: var( --color-subtle, #54595d );
 	}
 
-	/* First post — top-level paragraphs render as one continuous card.
-	   Per-paragraph zero margin so the left accent bar reads as a single
-	   continuous stripe; first/last get rounded corners on the outside. */
-	.mw-parser-output > p {
+	/* First post — every top-level block (paragraph, list, blockquote,
+	   pre/code) renders as part of one continuous accent-bar card. Each
+	   block has zero margin so the bar stays unbroken across types;
+	   non-pre blocks share the neutral first-post background, while
+	   <pre> keeps its own code styling and just picks up the accent. */
+	.mw-parser-output > p,
+	.mw-parser-output > ul,
+	.mw-parser-output > ol,
+	.mw-parser-output > blockquote {
 		background: var( --background-color-neutral-subtle, #f8f9fa );
 		border-left: 3px solid var( --border-color-progressive, #36c );
 		padding: 0.6em 0.85em;
-		margin: 0;
+		/* !important: Tweeki's sitewide `p { margin-bottom: 1em }` would
+		   otherwise leave a stripe-less gap between adjacent paragraphs. */
+		margin: 0 !important;
 		border-radius: 0;
 	}
+	.mw-parser-output > pre {
+		border-left: 3px solid var( --border-color-progressive, #36c );
+		margin: 0 !important;
+	}
+
+	/* Adjacent paragraphs read as one block — drop the seam padding. */
 	.mw-parser-output > p + p {
 		padding-top: 0;
 	}
-	.mw-parser-output > p:first-of-type {
+
+	/* Tighten the outer margins on the first/last block of the post so the
+	   accent stripe doesn't gain stray whitespace above or below. */
+	.mw-parser-output > p:first-of-type,
+	.mw-parser-output > ul:first-of-type,
+	.mw-parser-output > ol:first-of-type,
+	.mw-parser-output > pre:first-of-type,
+	.mw-parser-output > blockquote:first-of-type {
 		margin-top: 0.5em;
-		border-top-right-radius: 4px;
 	}
-	.mw-parser-output > p:last-of-type {
+	.mw-parser-output > p:last-of-type,
+	.mw-parser-output > ul:last-of-type,
+	.mw-parser-output > ol:last-of-type,
+	.mw-parser-output > pre:last-of-type,
+	.mw-parser-output > blockquote:last-of-type {
 		margin-bottom: 0.75em;
-		border-bottom-right-radius: 4px;
 	}
 
 	/* Replies — DT writes ":" indent which renders as <dl><dd>. Tweeki
@@ -129,6 +151,22 @@ html.labki-forum-topic {
 		}
 		dd p + p {
 			padding-top: 0.4em;
+		}
+	}
+
+	/* Don't apply reply-card chrome inside DT/VE editing surfaces — the
+	   user is composing, not reading a saved reply, so the accent stripe
+	   and tinted background read as cruft layered onto the textarea. */
+	.ext-discussiontools-replywidget,
+	.ve-ce-surface,
+	.ve-ui-surface {
+		dl,
+		dd {
+			margin: 0 !important;
+			padding: 0 !important;
+			border: 0 !important;
+			background: transparent !important;
+			border-radius: 0 !important;
 		}
 	}
 
