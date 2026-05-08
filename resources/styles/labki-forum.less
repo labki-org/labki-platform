@@ -154,6 +154,17 @@ html.labki-forum-topic {
 			padding-top: 0.4em;
 		}
 
+		/* Bullet/number lists inside a reply: trim browser's default
+		   ~40px padding-left so the marker doesn't end up pushed far
+		   past the surrounding reply text. The reply card's own
+		   horizontal padding already provides the inset; we just need
+		   enough room for the list marker itself. */
+		dd ul,
+		dd ol {
+			padding-left: 1.5em;
+			margin: 0.25em 0;
+		}
+
 		/* Multi-line replies (consecutive `::` lines) flow as one
 		   continuous comment card instead of fragmenting into a stack
 		   of small per-line cards. Each line is parsed as a sibling
