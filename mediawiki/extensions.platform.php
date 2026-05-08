@@ -95,20 +95,23 @@ $wgResourceModules['ext.labki.forum'] = [
     'localBasePath'  => $IP,
     'remoteBasePath' => $wgResourceBasePath,
 ];
+// Split into two modules so the styles can be loaded synchronously in
+// <head> (avoiding FOUC) while the click handler stays async.
+$wgResourceModules['ext.labki.forum.styles'] = [
+    'styles'         => [ 'resources/styles/labki-forum.less' ],
+    'localBasePath'  => $IP,
+    'remoteBasePath' => $wgResourceBasePath,
+];
+
 $wgHooks['BeforePageDisplay'][] = static function ( $out, $skin ) {
-    // Styles synchronously in <head>: avoids the FOUC where the page
-    // briefly renders unstyled (full-width title, paragraphs without the
-    // accent stripe) before the async-loaded CSS module arrives.
-    $out->addModuleStyles( [ 'ext.labki.forum' ] );
-    // Scripts async — the click handler doesn't need to be present at
-    // first paint, only when the user actually interacts.
+    $out->addModuleStyles( [ 'ext.labki.forum.styles' ] );
     $out->addModules( [ 'ext.labki.forum' ] );
 
     // Pre-apply the .labki-forum-topic class on <html> via an inline
     // head script so the CSS rules match before first paint, instead
-    // of waiting for labki-forum.js's DOM-ready handler. The JS still
-    // adds the class as a backstop. Talk-side namespaces have odd
-    // numeric IDs; "/" in the title indicates a subpage, i.e. a topic.
+    // of waiting for labki-forum.js's DOM-ready handler. Talk-side
+    // namespaces have odd numeric IDs; "/" in the title indicates a
+    // subpage, i.e. a topic.
     $title = $out->getTitle();
     if ( $title && ( $title->getNamespace() % 2 ) === 1
         && strpos( $title->getDBkey(), '/' ) !== false
