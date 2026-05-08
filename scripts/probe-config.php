@@ -48,6 +48,29 @@ class LabkiProbeConfig extends Maintenance {
         }
         $extNames = array_values( array_unique( $extNames ) );
         echo 'EXTENSIONS=' . implode( ',', $extNames ) . "\n";
+
+        // Namespace IDs registered by the dev overlay (Forum=3000,
+        // Forum_talk=3001) so the smoke test can verify the bind-mount
+        // landed and namespace registration didn't collide.
+        $nsInfo = MediaWiki\MediaWikiServices::getInstance()->getNamespaceInfo();
+        $nsIds = array_keys( $nsInfo->getCanonicalNamespaces() );
+        sort( $nsIds );
+        echo 'NAMESPACES=' . implode( ',', $nsIds ) . "\n";
+
+        // Custom SMW properties registered by the labki-forum module. The
+        // PropertyRegistry returns null for unknown IDs; filter for the
+        // ones that actually registered. Guard against SMW being absent
+        // (extensions disabled mode) so this probe stays useful there too.
+        $forumProps = [];
+        if ( class_exists( '\\SMW\\PropertyRegistry' ) ) {
+            $reg = \SMW\PropertyRegistry::getInstance();
+            foreach ( [ '___forum_subject', '___forum_starter', '___forum_comments', '___forum_participants' ] as $pid ) {
+                if ( $reg->getPropertyValueTypeById( $pid ) !== null ) {
+                    $forumProps[] = $pid;
+                }
+            }
+        }
+        echo 'SMW_FORUM_PROPS=' . implode( ',', $forumProps ) . "\n";
     }
 }
 

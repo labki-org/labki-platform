@@ -65,8 +65,10 @@ workaround, etc.).
 This file is skipped at startup when `MW_DISABLE_PLATFORM_EXTENSIONS=1`
 is set in the environment — used during clean-slate extension testing.
 
-Ordering matters: ConfirmEdit must come before WikiForum/ConfirmAccount.
-The header comment in the file flags the constraint.
+Ordering matters: ConfirmEdit must come before ConfirmAccount so the
+captcha trigger settings are picked up when ConfirmAccount registers
+its account-request form. The header comment in the file flags the
+constraint.
 
 ### `skins.platform.php` — curated skins
 

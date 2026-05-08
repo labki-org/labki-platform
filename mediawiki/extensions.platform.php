@@ -1,10 +1,10 @@
 <?php
 // extensions.platform.php - Curated Platform Extensions
 //
-// Ordering note: ConfirmEdit must load before WikiForum and ConfirmAccount
-// so that captcha trigger settings are picked up when those extensions
-// register their forms. Skins are loaded in skins.platform.php (after this
-// file) and site-wide permissions live in LocalSettings.base.php.
+// Ordering note: ConfirmEdit must load before ConfirmAccount so that
+// captcha trigger settings are picked up when ConfirmAccount registers
+// its account-request form. Skins are loaded in skins.platform.php
+// (after this file) and site-wide permissions live in LocalSettings.base.php.
 
 if (!defined('MEDIAWIKI')) {
     exit;
@@ -136,15 +136,17 @@ $wgHooks['ParserAfterParse'][] = static function ( $parser, &$text, $stripState 
     }
     $parserOutput = $parser->getOutput();
 
+    // SMW's DisplayTitle annotator hijacks the sortkey to the displaytitle
+    // when no explicit defaultsort is set, breaking LIKE-pattern queries
+    // like [[~*Miniscopes/*]]. Pin defaultsort unconditionally on forum
+    // topic pages so subpage queries always resolve, regardless of whether
+    // an H2 has been added yet.
+    $parserOutput->setPageProperty( 'defaultsort', $title->getPrefixedText() );
+
     $sections = $parserOutput->getSections();
     $subject = $sections ? trim( strip_tags( $sections[0]['line'] ?? '' ) ) : '';
     if ( $subject !== '' ) {
         $parserOutput->setDisplayTitle( $subject );
-        // SMW's DisplayTitle annotator hijacks the sortkey to the displaytitle
-        // when no explicit defaultsort is set, breaking LIKE-pattern queries
-        // like [[~*Miniscopes/*]]. Pin defaultsort to the canonical prefixed
-        // title so subpage queries still resolve.
-        $parserOutput->setPageProperty( 'defaultsort', $title->getPrefixedText() );
     }
 
     // $text at ParserAfterParse is in a half-parsed intermediate state —
@@ -161,10 +163,16 @@ $wgHooks['ParserAfterParse'][] = static function ( $parser, &$text, $stripState 
     }
     $commentCount = preg_match_all( '/\(UTC\)/', $wikitext );
     preg_match_all( '/\[\[User:([^|\]\/]+)/i', $wikitext, $matches );
-    $authors = array_map( static fn( $a ) => strtolower( trim( $a ) ), $matches[1] );
-    $authors = array_values( array_filter( $authors, static fn( $a ) => $a !== '' ) );
-    $participantCount = count( array_unique( $authors ) );
-    $starter = $authors[0] ?? '';
+    $rawAuthors = array_values( array_filter(
+        array_map( 'trim', $matches[1] ),
+        static fn( $a ) => $a !== ''
+    ) );
+    // Lowercase only for dedupe — MediaWiki user-page titles past the first
+    // letter are case-sensitive (alice and Alice are distinct), so the
+    // unique-count is fine on lowercased values, but the starter name has to
+    // keep its original case before flowing into Title::makeTitleSafe.
+    $participantCount = count( array_unique( array_map( 'strtolower', $rawAuthors ) ) );
+    $starter = $rawAuthors[0] ?? '';
 
     if ( $subject === '' && $commentCount === 0 ) {
         return;
@@ -241,9 +249,6 @@ $wgCaptchaTriggers['sendemail']       = false;
 $wgCaptchaTriggers['createaccount']   = true;
 $wgCaptchaTriggers['badlogin']        = true;
 $wgCaptchaTriggers['badloginperuser'] = true;
-
-wfLoadExtension('WikiForum');
-$wgWikiForumAllowAnonymous = false;
 
 wfLoadExtension('ConfirmAccount');
 
