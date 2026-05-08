@@ -165,6 +165,18 @@ html.labki-forum-topic {
 			margin: 0.25em 0;
 		}
 
+		/* Pre/code blocks inside a reply: same fix as first-post pre —
+		   strip Tweeki's #content-scoped 1px box border + radius so the
+		   pre flows naturally inside the reply card instead of breaking
+		   the visual continuity. !important needed because Tweeki's ID
+		   specificity outranks ours. The code background and font from
+		   Tweeki still apply, keeping code visually distinct. */
+		dd pre {
+			border: 0 !important;
+			border-radius: 0 !important;
+			margin: 0.25em 0 !important;
+		}
+
 		/* Multi-line replies (consecutive `::` lines) flow as one
 		   continuous comment card instead of fragmenting into a stack
 		   of small per-line cards. Each line is parsed as a sibling
