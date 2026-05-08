@@ -177,6 +177,16 @@ html.labki-forum-topic {
 			margin: 0.25em 0 !important;
 		}
 
+		/* Empty pre/p left over from MW parser quirks — e.g., wikitext
+		   like ":<pre>" / ":content" / ":</pre>" where the parser puts
+		   the open tag, content, and close tag each into separate <dd>s,
+		   leaving an empty <pre> renderable. Hiding these stops them
+		   from appearing as stray gray bars in a reply card. */
+		dd pre:empty,
+		dd p:empty {
+			display: none;
+		}
+
 		/* Multi-line replies (consecutive `::` lines) flow as one
 		   continuous comment card instead of fragmenting into a stack
 		   of small per-line cards. Each line is parsed as a sibling
