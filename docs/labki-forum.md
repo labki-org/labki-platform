@@ -115,6 +115,29 @@ Replace `Miniscopes` with the landing page's name. The `Topic` column auto-rende
 
 SMW's `~LIKE` pattern doesn't match the namespace prefix as a single token. Splitting into a namespace condition + a name pattern is the working idiom.
 
+## Subscribing to a forum (bell + email on new posts)
+
+The module ships an **auto-watch propagation hook**: when a new topic page is saved under any forum landing, every user who watches that landing page is automatically added as a watcher of the new topic. After that, MediaWiki's built-in watchlist plumbing handles notification delivery — no separate subscription store, no per-feature UI.
+
+To subscribe: click the Watch star on `Forum:Miniscopes` (or `2026_Paris_Workshop:Forum`, etc.). From that moment on, every fresh topic posted under that landing — plus every subsequent reply to those topics — lands on your watchlist, shows up in `Special:Watchlist` / its RSS feed, and (with `$wgEnotifWatchlist = true`) emails you.
+
+Set these in `LocalSettings.user.php` to enable the email leg:
+
+```php
+$wgEnotifWatchlist  = true;   // email watchers on any change to a watched page
+$wgEnotifUserTalk   = true;   // standard user-talk pings
+$wgEnotifMinorEdits = true;   // optional — include minor edits
+```
+
+Echo (loaded alongside DT) bridges watchlist changes into the bell notifications automatically.
+
+### Scope and limits
+
+- **Leaf-only.** Watching `Forum:Home` does **not** auto-watch posts in sub-forums like `Forum:Hardware`. The derivation is one subpage segment up (`Forum_talk:Hardware/<slug>` → `Forum:Hardware`), matching DT's per-page subscription model and the rest of the labki-forum talk-to-subject logic. If you want notifications across a whole tree, watch each leaf.
+- **No backfill.** Topics that existed before this hook was deployed are not retroactively added to existing watchers' watchlists. Future topics are covered from the moment a watcher hits the Watch star on the landing.
+- **The OP gets emailed for their own post by default? No.** MediaWiki's "Email me also for edits made by me" preference is off by default. The poster gets the topic added to their watchlist (so they see replies) but doesn't email themselves about the creation.
+- **Created-page email timing.** The hook runs in `PageSaveComplete`, which fires before `EmailNotification`'s deferred job queries the watcher set — so the very first revision (the topic creation) reliably emails landing-page watchers. Empirically true; if a MediaWiki upgrade reorders the deferred-update queue, the create-event email could be dropped while reply emails would continue to work (replies always have prior watchers).
+
 ## CSS hooks for customization
 
 The styling sits behind two top-level hooks you can override via `MediaWiki:Common.css` or per-skin custom CSS:
@@ -151,7 +174,7 @@ SESP's "Page author" property would surface "Started by" via a built-in route, b
 
 | File | Role |
 | :--- | :--- |
-| `mediawiki/extensions.platform.php` | Hook registrations: `SMW::Property::initProperties` (4 custom properties), `ParserAfterParse` (DISPLAYTITLE / DEFAULTSORT / SMW data), `BeforePageDisplay` (HTML class + breadcrumb subtitle). |
+| `mediawiki/extensions.platform.php` | Hook registrations: `SMW::Property::initProperties` (4 custom properties), `ParserAfterParse` (DISPLAYTITLE / DEFAULTSORT / SMW data), `PageSaveComplete` (auto-watch propagation: copies forum-landing watchers onto each new topic), `BeforePageDisplay` (HTML class + breadcrumb subtitle). |
 | `resources/scripts/labki-forum.js` | Click handler bound to `.labki-forum-new-post-btn` and `[data-labki-forum-new-post]`. |
 | `resources/styles/labki-forum.less` | All visual styling (button + topic-card chrome). Codex tokens with hex fallbacks. |
 | `compose/dev-config/LocalSettings.user.php` | Reference deployment of the namespace + SMW configuration above (used by the dev compose target only). |

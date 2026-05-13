@@ -237,6 +237,81 @@ $wgHooks['ParserAfterParse'][] = static function ( $parser, &$text, $stripState 
     $parserData->pushSemanticDataToParserOutput();
 };
 
+// Auto-watch propagation: when a fresh topic page is saved under a forum
+// landing (the page's subject-namespace counterpart, derived from the
+// base title), every user who watches the landing page becomes a watcher
+// of the new topic too. With $wgEnotifWatchlist enabled, this gives a
+// Forum its missing piece — clicking the Watch star on Forum:Miniscopes
+// (or 2026_Paris_Workshop:Forum) now reliably delivers a bell + email
+// notification when anyone posts a new topic there, because the topic
+// page lands on the watcher's watchlist before MediaWiki's deferred
+// EmailNotification job queries the watcher set.
+//
+// Leaf-only by design: we walk one subpage segment up via getBaseTitle()
+// (matching the Has forum annotator above), not the full Has parent forum
+// chain. Watching Forum:Home does NOT auto-watch posts in Forum:Hardware
+// — users subscribe per-forum, mirroring DT's per-page subscription model.
+//
+// Existing posts predating this hook are NOT backfilled — they stay
+// invisible to landing-page watchers until the next save touches them.
+// Acceptable for forums that are still warming up; a one-time backfill
+// script would be straightforward if needed later.
+//
+// We use WatchedItemStore::addWatchBatchForUser rather than
+// WatchlistManager::addWatch so the propagation isn't gated on the
+// landing-page watcher's editmywatchlist rights at this moment — they
+// already opted in by watching the landing.
+$wgHooks['PageSaveComplete'][] = static function (
+    $wikiPage, $user, $summary, $flags, $revisionRecord, $editResult
+) {
+    // Creations only — replies / edits don't re-fan out. Checking the
+    // parent revision id (0 / null on the first revision of a brand new
+    // page) is more reliable than relying on EDIT_NEW being set by every
+    // caller path (API, maintenance scripts, etc.).
+    $parentId = $revisionRecord->getParentId();
+    if ( $parentId !== null && $parentId !== 0 ) {
+        return;
+    }
+    $title = $wikiPage->getTitle();
+    if ( !$title || ( $title->getNamespace() % 2 ) !== 1
+        || strpos( $title->getDBkey(), '/' ) === false
+    ) {
+        return;
+    }
+
+    // Foo_talk:Bar/<slug> -> Foo:Bar — same derivation as Has forum above.
+    $landingTalk = $title->getBaseTitle();
+    if ( !$landingTalk ) {
+        return;
+    }
+    $landing = $landingTalk->getSubjectPage();
+    if ( !$landing->exists() ) {
+        return;
+    }
+
+    $services = \MediaWiki\MediaWikiServices::getInstance();
+    $dbr = $services->getDBLoadBalancer()->getConnection( DB_REPLICA );
+    $userIds = $dbr->newSelectQueryBuilder()
+        ->select( 'wl_user' )
+        ->from( 'watchlist' )
+        ->where( [
+            'wl_namespace' => $landing->getNamespace(),
+            'wl_title'     => $landing->getDBkey(),
+        ] )
+        ->caller( __METHOD__ )
+        ->fetchFieldValues();
+    if ( !$userIds ) {
+        return;
+    }
+
+    $userFactory = $services->getUserFactory();
+    $watchedItemStore = $services->getWatchedItemStore();
+    foreach ( $userIds as $uid ) {
+        $watcher = $userFactory->newFromId( (int)$uid );
+        $watchedItemStore->addWatchBatchForUser( $watcher, [ $title ] );
+    }
+};
+
 $wgHooks['BeforePageDisplay'][] = static function ( $out, $skin ) {
     $out->addModuleStyles( [ 'ext.labki.forum.styles' ] );
     $out->addModules( [ 'ext.labki.forum' ] );
