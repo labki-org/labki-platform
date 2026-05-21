@@ -45,16 +45,16 @@ services:
       # in a developer's running wiki for end-to-end testing of bundled
       # features (currently: Forum / Forum_talk for labki-forum).
       - ./dev-config:/mw-config
-      # Live-mount the DiscussionForum extension checkout if it sits as a
-      # sibling of labki-platform. Skips the image rebuild loop for
-      # iteration on extension code; the production image gets its copy
-      # via extensions-git/sources.txt at build time. Comment this out
-      # (or replace the host path) if your DiscussionForum clone lives
-      # elsewhere.
-      - ../../DiscussionForum:/var/www/html/extensions/DiscussionForum
     # volumes:
     #   - ../../MyExtension:/var/www/html/extensions/MyExtension
     #   - ../../MySkin:/mw-user-skins/MySkin
+    #   # Iteration on a labki-org extension that's already in
+    #   # extensions-git/sources.txt (e.g. DiscussionForum). Uncomment
+    #   # ONLY in your local checkout — do not commit. On CI runners the
+    #   # sibling path doesn't exist, Docker silently creates it as an
+    #   # empty directory, and that masks the in-image clone, breaking
+    #   # wfLoadExtension at update.php time.
+    #   - ../../DiscussionForum:/var/www/html/extensions/DiscussionForum
     depends_on:
       - db
     # Healthcheck inherits from the Dockerfile (start_period=60s,
