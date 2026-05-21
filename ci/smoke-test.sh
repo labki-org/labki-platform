@@ -98,8 +98,8 @@ verify_module skin.labki.tweeki.scripts scripts
 # extensions.platform.php). Skip in 'disabled' mode where the file doesn't
 # load and the module names are absent from ResourceLoader.
 if [ "$EXTENSIONS_MODE" = "enabled" ]; then
-    verify_module ext.labki.forum.styles styles
-    verify_module ext.labki.forum        scripts
+    verify_module ext.discussionforum.styles styles
+    verify_module ext.discussionforum        scripts
 fi
 
 # --- Probe runtime config from inside the container ---
