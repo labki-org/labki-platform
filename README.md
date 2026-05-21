@@ -24,7 +24,7 @@ The platform defines a single authoritative MediaWiki environment. All platform-
 -   **[User Guide](runtime/README.md)**: How to deploy and configure the runtime distribution.
 -   **[Extension Dev Guide](docs/extension-dev-guide.md)**: How to use this platform to test your own extensions.
 -   **[Tweeki Runbook](docs/tweeki-runbook.md)**: Switching the platform skin to Tweeki and the customization surface it exposes.
--   **[Labki Forum Runbook](docs/labki-forum.md)**: DiscussionTools-as-forum bundled feature — namespace setup, button placement, SMW forum index.
+-   **[DiscussionForum cutover note](docs/labki-forum.md)**: pointer to the extracted [DiscussionForum extension](https://github.com/labki-org/DiscussionForum) and the deployer-side rename consequences from the cutover.
 -   **[Changelog](CHANGELOG.md)**: Release history and notable changes.
 
 ## Repository Structure

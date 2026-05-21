@@ -43,7 +43,7 @@ services:
       # Dev-only overlay: namespace declarations and any other settings
       # that aren't part of the platform default but should be present
       # in a developer's running wiki for end-to-end testing of bundled
-      # features (currently: Forum / Forum_talk for labki-forum).
+      # features (currently: Forum / Forum_talk for DiscussionForum).
       - ./dev-config:/mw-config
     # volumes:
     #   - ../../MyExtension:/var/www/html/extensions/MyExtension
