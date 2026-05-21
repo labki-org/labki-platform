@@ -90,9 +90,10 @@ class LabkiProbeForumPage extends Maintenance {
         DeferredUpdates::doUpdates();
 
         // Drain the DT annotate jobs queued by PageSaveComplete. Each
-        // job parses Parsoid HTML via DT, caches counts, and runs
-        // RefreshLinksJob inline; RefreshLinksJob then re-renders and
-        // re-stores SMW data with the DT-derived bundle in place.
+        // job parses Parsoid HTML via DT, caches counts, and queues a
+        // RefreshLinksJob (no longer runs it inline as of DiscussionForum
+        // commit a1dc51f — inline collided with the JobRunner's
+        // transaction round and left half-claimed rows on production).
         $jqg = $services->getJobQueueGroup();
         $drained = 0;
         while ( ( $job = $jqg->pop( 'discussionForumAnnotate' ) ) ) {
@@ -100,6 +101,20 @@ class LabkiProbeForumPage extends Maintenance {
             $drained++;
             if ( $drained > 5 ) {
                 $this->fatalError( 'Runaway discussionForumAnnotate job loop (>5 iterations).' );
+            }
+        }
+        DeferredUpdates::doUpdates();
+
+        // Then drain the RefreshLinksJob the annotate job just queued.
+        // It re-parses the page, ParserAfterParse reads the stash, and
+        // SMW's LinksUpdate stores the DT-derived bundle through
+        // OPT_FORCED_UPDATE.
+        $drained = 0;
+        while ( ( $job = $jqg->pop( 'refreshLinks' ) ) ) {
+            $job->run();
+            $drained++;
+            if ( $drained > 5 ) {
+                $this->fatalError( 'Runaway refreshLinks job loop (>5 iterations).' );
             }
         }
         DeferredUpdates::doUpdates();
