@@ -318,6 +318,20 @@ $wgHooks['ParserAfterParse'][] = static function ( $parser, &$text, $stripState 
                     );
                 }
             }
+            // Force SMW to re-run the data update even though the revision
+            // ID hasn't changed. SMW's LinksUpdateComplete handler skips
+            // when the stored associatedRev matches the page's latestRev
+            // (DataUpdater::isSkippable in SMW's source). The initial save
+            // for this revision already stored a title-derived snapshot
+            // (DT-bundle absent, stash hadn't been populated yet) — without
+            // this flag the RefreshLinksJob from LabkiForumDTAnnotateJob
+            // would silently skip and the DT-derived props would never
+            // land in the store. Only set when we actually have DT data
+            // to contribute, so we don't pay the cost on every reparse.
+            $parserOutput->setExtensionData(
+                \SMW\ParserData::OPT_FORCED_UPDATE,
+                true
+            );
         }
     }
     $parserData->pushSemanticDataToParserOutput();
