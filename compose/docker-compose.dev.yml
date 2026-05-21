@@ -45,6 +45,13 @@ services:
       # in a developer's running wiki for end-to-end testing of bundled
       # features (currently: Forum / Forum_talk for labki-forum).
       - ./dev-config:/mw-config
+      # Live-mount the DiscussionForum extension checkout if it sits as a
+      # sibling of labki-platform. Skips the image rebuild loop for
+      # iteration on extension code; the production image gets its copy
+      # via extensions-git/sources.txt at build time. Comment this out
+      # (or replace the host path) if your DiscussionForum clone lives
+      # elsewhere.
+      - ../../DiscussionForum:/var/www/html/extensions/DiscussionForum
     # volumes:
     #   - ../../MyExtension:/var/www/html/extensions/MyExtension
     #   - ../../MySkin:/mw-user-skins/MySkin
