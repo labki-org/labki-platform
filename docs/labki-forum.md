@@ -13,7 +13,7 @@ Bundled into the platform with no extra configuration beyond namespace setup:
 - **Five custom SMW properties** populated per topic so a landing page can render a forum index via `#ask`:
   - `Topic subject` (Text) — first H2 of the page
   - `Topic starter` (Page) — first signature author, as a `User:Name` link
-  - `Comment count` (Number) — count of signed `(UTC)` timestamps
+  - `Comment count` (Number) — count of signed timestamps in the page; matches any `$wgLocaltimezone` (UTC, PDT/PST, EST/EDT, etc.)
   - `Participant count` (Number) — unique authors
   - `Has forum` (Page) — the topic's containing forum landing, derived from the page's base title (`Forum_talk:Hardware/<slug>` → `Forum:Hardware`). Always set, even on freshly-saved empty topics. Enables chained queries like `[[Has forum.Has parent forum::Forum:Home]]` for activity feeds on hub-style landing pages.
 
@@ -129,7 +129,7 @@ The styling sits behind two top-level hooks you can override via `MediaWiki:Comm
 
 ### English-locale signature heuristic
 
-`Comment count` and `Participant count` are extracted by counting `(UTC)` timestamps and `[[User:Name]]` wikilinks in the saved revision's wikitext. Localized signatures (`(MEZ)` on de.wiki, etc.) will undercount. Switching to DT's authoritative `ContentHeadingItem::getCommentCount()` would require a deferred-update model since DT's parser needs already-rendered HTML. Acceptable for English-language deployments; revisit if shipping to a multilingual wiki.
+`Comment count` and `Participant count` are extracted from the saved revision's wikitext: comments by matching the MW English-locale signature timestamp shape (`HH:MM, D MONTHNAME YYYY (TZ)`), participants by counting `[[User:Name]]` wikilinks. The TZ token is open-ended, so non-UTC `$wgLocaltimezone` settings (`(PDT)`, `(PST)`, `(EST)`, …) count correctly. Fully-localized signatures with non-English month names will still undercount. Switching to DT's authoritative `ContentHeadingItem::getCommentCount()` would require a deferred-update model since DT's parser needs already-rendered HTML. Acceptable for English-language deployments; revisit if shipping to a multilingual wiki.
 
 ### Counts include the OP
 

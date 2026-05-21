@@ -121,10 +121,13 @@ $wgHooks['SMW::Property::initProperties'][] = static function ( $propertyRegistr
 // pipeline and gets the values into ParserOutput in time for SMW.
 //
 // === Caveats / known limits ===
-// 1. English-locale only. Comments are detected by counting "(UTC)"
-//    signature timestamps; authors by counting [[User:Name]] wikilinks.
-//    Localized signatures (e.g. "(MEZ)" on de.wiki, "(コメント)" patterns)
-//    will undercount. Acceptable for an English-language dev wiki; revisit
+// 1. English-locale only. Comments are detected by matching the MW
+//    English-locale signature timestamp shape (HH:MM, D MONTHNAME YYYY
+//    (TZ)); authors by counting [[User:Name]] wikilinks. The TZ token
+//    is open-ended, so any $wgLocaltimezone — UTC, PDT/PST, EST/EDT,
+//    CET, etc. — is picked up. Non-Latin month names (e.g. "(コメント)"
+//    patterns, fully localized DateFormatter output) will still
+//    undercount. Acceptable for English-language deployments; revisit
 //    if this ships to a multilingual deployment.
 // 2. Counts include the OP — a fresh topic with no replies reads as
 //    "1 comment, 1 participant", matching Discourse-style conventions.
@@ -173,7 +176,16 @@ $wgHooks['ParserAfterParse'][] = static function ( $parser, &$text, $stripState 
             $wikitext = $content->getText();
         }
     }
-    $commentCount = preg_match_all( '/\(UTC\)/', $wikitext );
+    // Match the full MW English-locale signature timestamp shape
+    // (`HH:MM, D MONTHNAME YYYY (TZ)`) rather than just `(UTC)`, so wikis
+    // configured with a non-UTC $wgLocaltimezone (signatures ending in PDT
+    // / PST / EST / etc.) count their comments. Anchoring on the timestamp
+    // pattern keeps the TZ token open-ended without false-positiving on
+    // unrelated parenthetical text.
+    $commentCount = preg_match_all(
+        '/\d{1,2}:\d{2},\s\d{1,2}\s\S+\s\d{4}\s\([^)]+\)/u',
+        $wikitext
+    );
     preg_match_all( '/\[\[User:([^|\]\/]+)/i', $wikitext, $matches );
     $rawAuthors = array_values( array_filter(
         array_map( 'trim', $matches[1] ),

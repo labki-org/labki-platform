@@ -10,7 +10,8 @@
  *   DISPLAYTITLE       - first H2 promoted via setDisplayTitle
  *   DEFAULTSORT        - canonical title pinned to neutralize SMW's
  *                        sortkey hijack from the DisplayTitle annotator
- *   FORUM_COMMENTS     - count of (UTC) signature timestamps in wikitext
+ *   FORUM_COMMENTS     - count of MW signature timestamps in wikitext
+ *                        (locale-time-zone agnostic: (UTC), (PDT), (EST), …)
  *   FORUM_PARTICIPANTS - unique [[User:X]] authors
  *   FORUM_STARTER      - first author, as User:Name
  *   FORUM_SUBJECT      - same string as DISPLAYTITLE, captured separately
@@ -54,13 +55,17 @@ class LabkiProbeForumPage extends Maintenance {
             'Smoketest/2026-01-01_120000_Bob'
         );
 
-        // Two unique authors across three signed comments. 'Bob' uses
+        // Two unique authors across four signed comments. 'Bob' uses
         // mixed case so a case-folding regression in the starter extraction
         // would surface as User:bob (or a redlink) rather than User:Bob.
+        // The final reply uses a (PDT) timestamp so the signature regex's
+        // locale-time-zone openness is exercised — a regression back to a
+        // literal `(UTC)` match would drop the count to 3.
         $wikitext = "== Hello smoke ==\n\n"
             . "Initial post body. [[User:Bob|Bob]] ([[User talk:Bob|talk]]) 12:00, 1 January 2026 (UTC)\n\n"
             . ":Reply from another user. [[User:Alice|Alice]] ([[User talk:Alice|talk]]) 12:05, 1 January 2026 (UTC)\n\n"
-            . "::Followup. [[User:Bob|Bob]] ([[User talk:Bob|talk]]) 12:10, 1 January 2026 (UTC)\n";
+            . "::Followup. [[User:Bob|Bob]] ([[User talk:Bob|talk]]) 12:10, 1 January 2026 (UTC)\n\n"
+            . ":Non-UTC reply. [[User:Bob|Bob]] ([[User talk:Bob|talk]]) 05:15, 1 January 2026 (PDT)\n";
 
         $services = MediaWikiServices::getInstance();
         $user = User::newSystemUser( 'Smoke probe', [ 'steal' => true ] );

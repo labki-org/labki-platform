@@ -30,6 +30,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Theme stylesheet refactored from a single `labki-tweeki.css` into a Citizen-style trio: `labki-tweeki.less` (rules) + `tokens-theme-base.less` (light tokens) + `tokens-theme-dark.less` (dark tokens + Codex mirror). Tokens are declared in OKLCH for perceptual uniformity; the dark theme overrides only lightness values so the palette is a parametric mirror of the light palette rather than a hand-tuned alternative. SchemaSync TemplateStyles already consume `var(--labki-*)` with literal fallbacks, so this is a backing change with no template-side migration.
 - `compose/docker-compose.dev.yml` now also live-mounts `mediawiki/` so edits to platform PHP config (skins.platform.php, extensions.platform.php, LocalSettings.base.php) take effect without an image rebuild.
 
+### Fixed
+- **Labki Forum — `Comment count` / `Participant count` on non-UTC wikis**: the `ParserAfterParse` annotator was matching the literal string `(UTC)` to count signed comments, so wikis configured with a non-UTC `$wgLocaltimezone` (signatures end in `(PDT)` / `(PST)` / `(EST)` / etc.) saw `Comment count = 0` and no `Participant count` annotation — leaving the forum-index `?Comment count=Replies` column stuck at 0 even on active topics. The regex now matches the full MW English-locale signature timestamp shape (`HH:MM, D MONTHNAME YYYY (TZ)`) with an open-ended TZ token, so any locale-time-zone setting counts correctly. Existing topic pages need a null-edit (or `rebuildData.php -n 3000,3001`) for the annotation to backfill.
+
 ### Removed
 - Timestamp-localization JavaScript in `labki-tweeki.js`. The string-rewrite was overriding MediaWiki user date preferences with a hardcoded format. Date display now defers to SMW query authors (`?Date`, `?Date#-F[...]`) and MediaWiki preferences.
 - `--labki-warning` and `--labki-radius` design tokens — defined but unreferenced anywhere in the codebase.

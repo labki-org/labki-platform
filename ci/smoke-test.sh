@@ -191,8 +191,8 @@ if [ "$DOCKER_TARGET" = "dev" ] && [ "$EXTENSIONS_MODE" = "enabled" ]; then
         || fail "DEFAULTSORT is '$(fextract DEFAULTSORT)', expected canonical title (SMW sortkey hijack regression)."
     [ "$(fextract FORUM_SUBJECT)" = "Hello smoke" ] \
         || fail "FORUM_SUBJECT SMW property is '$(fextract FORUM_SUBJECT)', expected 'Hello smoke'."
-    [ "$(fextract FORUM_COMMENTS)" = "3" ] \
-        || fail "FORUM_COMMENTS is '$(fextract FORUM_COMMENTS)', expected 3 (one per (UTC) signature)."
+    [ "$(fextract FORUM_COMMENTS)" = "4" ] \
+        || fail "FORUM_COMMENTS is '$(fextract FORUM_COMMENTS)', expected 4 (three UTC + one PDT signature; locale-time-zone regression in the signature regex?)."
     [ "$(fextract FORUM_PARTICIPANTS)" = "2" ] \
         || fail "FORUM_PARTICIPANTS is '$(fextract FORUM_PARTICIPANTS)', expected 2 unique authors."
     [ "$(fextract FORUM_STARTER)" = "User:Bob" ] \
