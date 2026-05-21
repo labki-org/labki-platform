@@ -7,8 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- **Labki Forum**: bundled forum-style discussion topics on top of MediaWiki DiscussionTools. Drop-in `.labki-forum-new-post-btn` (or `[data-labki-forum-new-post]`) creates a Talk-namespace subpage with `<UTC-timestamp>_<username>` slug and routes to DT's new-topic widget. Topic pages render as forum cards (outer frame, accent-bar first post, indented reply cards, button-styled reply links) with a `← parent` breadcrumb back-link. First H2 promotes to DISPLAYTITLE. Five custom SMW properties (`Topic subject`, `Topic starter`, `Comment count`, `Participant count`, `Has forum`) populate per topic so a landing page can render a forum index via `#ask` — `Has forum` is set on every topic from the page's base title, enabling chained queries like `[[Has forum.Has parent forum::Forum:Home]]` for cross-forum activity feeds on hub pages. Works with any namespace pair the deployer sets up; documented in [`docs/labki-forum.md`](docs/labki-forum.md).
+### Changed (breaking) — forum extracted into its own extension
+
+The bundled forum block previously inline in `mediawiki/extensions.platform.php` has been extracted into a standalone MediaWiki extension at https://github.com/labki-org/DiscussionForum and registered via `extensions-git/sources.txt`. The platform now loads the feature with a single `wfLoadExtension('DiscussionForum')`. The extension repo also picks up the work that was open as PR #74 (watchlist subscription fanout) and ships a new workaround for an upstream DiscussionTools bug that suppresses auto-subscribe whenever `$wgLocaltimezone != 'UTC'`.
+
+User-facing renames consuming wikis (and any consuming SchemaSync templates) must apply at cutover:
+
+- CSS class `.labki-forum-new-post-btn` → `.discussionforum-new-post-btn`
+- Data attribute `data-labki-forum-new-post` → `data-discussionforum-new-post`
+- Landing wrapper class `.labki-forum-landing` → `.discussionforum-landing`
+- ResourceLoader modules `ext.labki.forum{,.styles}` → `ext.discussionforum{,.styles}`
+- Job name `labkiForumDTAnnotate` → `discussionForumAnnotate` (drain the old queue before deploy: `php maintenance/run.php runJobs.php --type labkiForumDTAnnotate`)
+
+Unchanged across the rename so existing on-wiki `#ask` queries and SMW data keep working:
+
+- SMW property labels (`Has forum`, `Topic subject`, `Topic starter`, `Comment count`, `Participant count`)
+- SMW property internal IDs (`___forum_*`) — no `rebuildData.php` needed
+
+For wikis with pre-existing forum topics (saved before `wfLoadExtension('DiscussionForum')` lands), run the backfill maintenance script once after deploy to re-emit DT-derived properties:
+
+```
+php maintenance/run.php extensions/DiscussionForum/maintenance/backfillForumAnnotations.php
+```
+
+Full migration notes in [`docs/labki-forum.md`](docs/labki-forum.md), which is now a pointer stub at the platform side.
 - Custom Tweeki skin theme with academic color palette and layout defaults
 - CONTRIBUTING.md with contributor guidelines
 - CHANGELOG.md for tracking releases

@@ -27,3 +27,9 @@ node_modules/
 
 # Temporary
 tmp/
+
+# Claude Code local state (scheduled-task locks, etc.). settings.local.json
+# is intentionally not ignored here — users opt into committing their own
+# .claude/settings.local.json or not. Only the transient runtime files
+# leak into the working tree and should never be committed.
+.claude/scheduled_tasks.lock

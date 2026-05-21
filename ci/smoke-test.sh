@@ -98,8 +98,8 @@ verify_module skin.labki.tweeki.scripts scripts
 # extensions.platform.php). Skip in 'disabled' mode where the file doesn't
 # load and the module names are absent from ResourceLoader.
 if [ "$EXTENSIONS_MODE" = "enabled" ]; then
-    verify_module ext.labki.forum.styles styles
-    verify_module ext.labki.forum        scripts
+    verify_module ext.discussionforum.styles styles
+    verify_module ext.discussionforum        scripts
 fi
 
 # --- Probe runtime config from inside the container ---
@@ -168,18 +168,18 @@ if [ "$DOCKER_TARGET" = "dev" ] && [ "$EXTENSIONS_MODE" = "enabled" ]; then
             || fail "namespace ID '$ns' missing from probe (dev overlay didn't load?)."
     done
 
-    echo "[smoke-test] Verifying labki-forum SMW custom properties..."
+    echo "[smoke-test] Verifying DiscussionForum SMW custom properties..."
     for pid in ___forum_subject ___forum_starter ___forum_comments ___forum_participants ___forum_parent; do
         contains_csv "$SMW_FORUM_PROPS" "$pid" \
             || fail "SMW custom property '$pid' is not registered (forum hook didn't fire?)."
     done
 
     # End-to-end probe: save a synthetic Forum_talk subpage, drain the
-    # labkiForumDTAnnotate job (which parses Parsoid HTML via DT and runs
+    # discussionForumAnnotate job (which parses Parsoid HTML via DT and runs
     # RefreshLinksJob inline), and verify all five SMW properties plus
     # DISPLAYTITLE / DEFAULTSORT landed correctly. Exercises the full
     # save → DT job → SMW write cycle that runs on every real topic save.
-    echo "[smoke-test] Probing labki-forum save + DT-annotate-job cycle..."
+    echo "[smoke-test] Probing DiscussionForum save + DT-annotate-job cycle..."
     FORUM_PROBE=$(docker compose -f "$COMPOSE_FILE" exec -T wiki php /opt/labki/scripts/probe-forum-page.php) \
         || { echo "[smoke-test] forum-probe output:"; echo "$FORUM_PROBE"; fail "probe-forum-page.php failed inside container."; }
     echo "[smoke-test] Forum probe returned:"

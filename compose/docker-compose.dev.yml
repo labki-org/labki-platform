@@ -43,11 +43,18 @@ services:
       # Dev-only overlay: namespace declarations and any other settings
       # that aren't part of the platform default but should be present
       # in a developer's running wiki for end-to-end testing of bundled
-      # features (currently: Forum / Forum_talk for labki-forum).
+      # features (currently: Forum / Forum_talk for DiscussionForum).
       - ./dev-config:/mw-config
     # volumes:
     #   - ../../MyExtension:/var/www/html/extensions/MyExtension
     #   - ../../MySkin:/mw-user-skins/MySkin
+    #   # Iteration on a labki-org extension that's already in
+    #   # extensions-git/sources.txt (e.g. DiscussionForum). Uncomment
+    #   # ONLY in your local checkout — do not commit. On CI runners the
+    #   # sibling path doesn't exist, Docker silently creates it as an
+    #   # empty directory, and that masks the in-image clone, breaking
+    #   # wfLoadExtension at update.php time.
+    #   - ../../DiscussionForum:/var/www/html/extensions/DiscussionForum
     depends_on:
       - db
     # Healthcheck inherits from the Dockerfile (start_period=60s,

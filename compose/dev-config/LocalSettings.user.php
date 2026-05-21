@@ -3,9 +3,9 @@
 // compose/docker-compose.dev.yml (mounted into the container at
 // /mw-config/LocalSettings.user.php).
 //
-// Sets up a Forum / Forum_talk namespace pair so the bundled labki-forum
-// module (registered in mediawiki/extensions.platform.php) can be exercised
-// end-to-end. Drop the .labki-forum-new-post-btn span on a Forum:* page;
+// Sets up a Forum / Forum_talk namespace pair so the DiscussionForum
+// extension (loaded by mediawiki/extensions.platform.php) can be exercised
+// end-to-end. Drop the .discussionforum-new-post-btn span on a Forum:* page;
 // the resulting topic lands at Forum_talk:.../<UTC-timestamp>_<username>.
 //
 // Forum: subject pages are sysop-only (curated landing pages); Forum_talk:

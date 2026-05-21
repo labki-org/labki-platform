@@ -57,7 +57,7 @@ class LabkiProbeConfig extends Maintenance {
         sort( $nsIds );
         echo 'NAMESPACES=' . implode( ',', $nsIds ) . "\n";
 
-        // Custom SMW properties registered by the labki-forum module. The
+        // Custom SMW properties registered by the DiscussionForum extension. The
         // PropertyRegistry returns null for unknown IDs; filter for the
         // ones that actually registered. Use ExtensionRegistry::isLoaded
         // rather than class_exists — SMW is composer-autoloaded so its

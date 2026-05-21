@@ -1,6 +1,6 @@
 <?php
 /**
- * probe-forum-page.php - end-to-end smoke probe for the labki-forum hooks.
+ * probe-forum-page.php - end-to-end smoke probe for the DiscussionForum hooks.
  *
  * Exercises the full save → DT-annotate-job → RefreshLinksJob →
  * ParserAfterParse → SMW write cycle, then reads back the resulting
@@ -18,7 +18,7 @@
  *
  * Architecture note: the DT-derived bundle (FORUM_COMMENTS /
  * FORUM_PARTICIPANTS / FORUM_STARTER) is populated asynchronously via
- * the labkiForumDTAnnotate job. The smoke test runs the job inline
+ * the discussionForumAnnotate job. The smoke test runs the job inline
  * (the dev compose target doesn't start a jobrunner sidecar; see
  * ci/smoke-test.sh), which in turn runs RefreshLinksJob inline so SMW
  * re-stores the page with the DT data flowing through ParserAfterParse.
@@ -43,7 +43,7 @@ use MediaWiki\User\User;
 class LabkiProbeForumPage extends Maintenance {
     public function __construct() {
         parent::__construct();
-        $this->addDescription( 'Probe the labki-forum hooks via a saved Forum_talk subpage.' );
+        $this->addDescription( 'Probe the DiscussionForum hooks via a saved Forum_talk subpage.' );
     }
 
     public function execute() {
@@ -95,11 +95,11 @@ class LabkiProbeForumPage extends Maintenance {
         // re-stores SMW data with the DT-derived bundle in place.
         $jqg = $services->getJobQueueGroup();
         $drained = 0;
-        while ( ( $job = $jqg->pop( 'labkiForumDTAnnotate' ) ) ) {
+        while ( ( $job = $jqg->pop( 'discussionForumAnnotate' ) ) ) {
             $job->run();
             $drained++;
             if ( $drained > 5 ) {
-                $this->fatalError( 'Runaway labkiForumDTAnnotate job loop (>5 iterations).' );
+                $this->fatalError( 'Runaway discussionForumAnnotate job loop (>5 iterations).' );
             }
         }
         DeferredUpdates::doUpdates();

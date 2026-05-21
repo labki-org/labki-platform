@@ -1,168 +1,42 @@
-# Labki Forum Runbook
+# Labki Forum (extracted)
 
-Forum-style discussion topics built on top of MediaWiki **DiscussionTools**, using Talk-namespace subpages with auto-generated `<UTC-timestamp>_<username>` slugs. No dedicated forum extension; the entire feature is bundled into the platform as a small ResourceLoader module plus three PHP hooks.
+The forum feature previously documented here has been extracted into a
+standalone MediaWiki extension:
 
-## What you get
+> **DiscussionForum** — https://github.com/labki-org/DiscussionForum
 
-Bundled into the platform with no extra configuration beyond namespace setup:
+All hooks, the SMW property registration, the DT-derived annotation
+job, the watchlist subscription fanout, and the DiscussionTools
+auto-subscribe timezone-bug workaround now live in that repo. The
+extension is registered in [`extensions-git/sources.txt`](../extensions-git/sources.txt)
+and loaded by `mediawiki/extensions.platform.php` via
+`wfLoadExtension('DiscussionForum')`.
 
-- A drop-in **"new topic" button** for any wiki page. Clicking it routes the user to DT's new-topic widget on a fresh subpage of the current page's talk-namespace counterpart.
-- **Forum-card styling** on the resulting topic pages (outer card frame, accent-bar first post, indented reply cards, button-styled reply links). Covers Tweeki and Vector-family skins; uses Codex tokens for light/dark theming.
-- A **"← parent" breadcrumb** at the top of every topic page, linking back to the subject-namespace landing page.
-- **`__DISPLAYTITLE__` auto-set** to the topic's first H2, so browser tabs and inbound wikilinks render the human-readable subject instead of the `<UTC>_<user>` slug.
-- **Five custom SMW properties** populated per topic so a landing page can render a forum index via `#ask`:
-  - `Topic subject` (Text) — first H2 of the page
-  - `Topic starter` (Page) — DT's oldest-reply author, as a `User:Name` link
-  - `Comment count` (Number) — comment count from DT's `ContentHeadingItem::getCommentCount()` (locale-correct: handles any `$wgLocaltimezone`, custom signatures, and transcluded comments)
-  - `Participant count` (Number) — unique authors from DT's `getAuthorsBelow()`
-  - `Has forum` (Page) — the topic's containing forum landing, derived from the page's base title (`Forum_talk:Hardware/<slug>` → `Forum:Hardware`). Always set, even on freshly-saved empty topics. Enables chained queries like `[[Has forum.Has parent forum::Forum:Home]]` for activity feeds on hub-style landing pages.
+The full runbook — namespace setup, the CSS / data-attr API surface,
+SMW property labels for `#ask` queries, the auto-watch subscription
+model — lives in the extension's own
+[README](https://github.com/labki-org/DiscussionForum#readme).
 
-## Setup for a new namespace pair
+## Cutover renames (2026)
 
-Suppose you want a forum at `Forum:*` with topic pages under `Forum_talk:*`. In your `LocalSettings.user.php`:
+When migrating from the inline labki-platform vintage to the
+extracted extension, consuming wikis (and the SchemaSync templates
+that drive them) need these search-and-replaces:
 
-```php
-define( 'NS_FORUM',      3000 );
-define( 'NS_FORUM_TALK', 3001 );
+| Old (inline vintage)             | New (DiscussionForum)               |
+| :---                             | :---                                |
+| `.labki-forum-new-post-btn`      | `.discussionforum-new-post-btn`     |
+| `data-labki-forum-new-post`      | `data-discussionforum-new-post`     |
+| `.labki-forum-landing`           | `.discussionforum-landing`          |
+| RL module `ext.labki.forum*`     | `ext.discussionforum*`              |
+| Job `labkiForumDTAnnotate`       | `discussionForumAnnotate`           |
 
-$wgExtraNamespaces[NS_FORUM]      = 'Forum';
-$wgExtraNamespaces[NS_FORUM_TALK] = 'Forum_talk';
+SMW property labels (`Has forum`, `Topic subject`, `Topic starter`,
+`Comment count`, `Participant count`) and their internal IDs
+(`___forum_*`) are intentionally unchanged across the cutover —
+existing on-wiki `#ask` queries and stored data keep working.
 
-// Subpages must be enabled on the talk side — that's where topics live.
-$wgNamespacesWithSubpages[NS_FORUM]      = true;
-$wgNamespacesWithSubpages[NS_FORUM_TALK] = true;
-
-// Optional: make Forum: a content namespace so landing pages count
-// for Recent Changes / search defaults.
-$wgContentNamespaces[] = NS_FORUM;
-
-// Optional: lock down Forum: so only admins curate landing pages,
-// while Forum_talk: stays open to logged-in users for posting topics.
-$wgNamespacePermissionLockdown[NS_FORUM]['edit']   = [ 'sysop' ];
-$wgNamespacePermissionLockdown[NS_FORUM]['create'] = [ 'sysop' ];
-```
-
-The feature is **not Forum-specific**. The hooks fire on any odd-numbered namespace (i.e. any talk-side namespace) with a `/` in the page name — so `Project_talk:Foo/<slug>`, `User_talk:Bob/<slug>`, and plain `Talk:Article/<slug>` all pick up the forum chrome. Pick whatever namespace pair fits your use case.
-
-### Enabling SMW indexing for the forum index
-
-The four custom SMW properties register automatically the moment the platform's extensions load, but for them (and their associated `#ask` queries) to show data, SMW needs to be told the topic namespaces are queryable, plus a few built-in special properties enabled for the forum-index columns:
-
-```php
-$smwgNamespacesWithSemanticLinks[NS_FORUM]      = true;
-$smwgNamespacesWithSemanticLinks[NS_FORUM_TALK] = true;
-
-// _CDAT (Creation date), _LEDT (Last editor is), _DTITLE (Display title of)
-// surface the "Started", "Last by", and "Subject" columns of the forum index.
-$smwgPageSpecialProperties = array_merge(
-    $smwgPageSpecialProperties ?? [],
-    [ '_CDAT', '_LEDT', '_DTITLE' ]
-);
-```
-
-After changing this list you need to bump the SMW SQL store schema and re-index existing pages:
-
-```bash
-docker exec <wiki-container> php /var/www/html/extensions/SemanticMediaWiki/maintenance/setupStore.php
-docker exec <wiki-container> php /var/www/html/extensions/SemanticMediaWiki/maintenance/rebuildData.php -n 3000,3001
-```
-
-## Placing the "new topic" button
-
-Drop one of these on any page that should become a forum landing page:
-
-```html
-<!-- Bundled visual styling (uses the .labki-forum-new-post-btn class shipped in labki-forum.less) -->
-<span class="labki-forum-new-post-btn" role="button" tabindex="0">Make new post</span>
-
-<!-- Bring-your-own UI: pure behavioral hook, no styling attached -->
-<button class="my-button" data-labki-forum-new-post>Start a discussion</button>
-```
-
-On click, the handler:
-1. Reads the current page name (`Forum:Miniscopes`).
-2. Flips to the talk-namespace counterpart via `mw.Title.getTalkPage()` (`Forum_talk:Miniscopes`).
-3. Generates a slug from the current UTC timestamp and the viewer's username (`2026-05-08_120030_Daniel`).
-4. Navigates to `Forum_talk:Miniscopes/<slug>?action=edit&section=new`, which DT renders as its new-topic widget.
-
-The user types their subject (H2) and body, hits "Reply", and lands on the saved topic page styled as a forum card.
-
-## Forum index `#ask` query
-
-Paste this on a `Forum:*` landing page to render an index of its topics:
-
-```
-{{#ask: [[Forum talk:+]] [[~*Miniscopes/*]]
- |mainlabel=Topic
- |?Topic starter=Started by
- |?Last editor is=Last by
- |?Creation date#LOCL=Started
- |?Modification date#LOCL=Last activity
- |?Comment count=Replies
- |?Participant count=People
- |format=broadtable
- |headers=plain
- |sort=Modification date
- |order=desc
- |limit=20
- |default=No topics yet.
-}}
-```
-
-Replace `Miniscopes` with the landing page's name. The `Topic` column auto-renders the H2 as link text (DISPLAYTITLE-driven), with the link target being the canonical slug-based URL.
-
-### Why `[[Forum talk:+]] [[~*Miniscopes/*]]` instead of `[[~Forum talk:Miniscopes/*]]`
-
-SMW's `~LIKE` pattern doesn't match the namespace prefix as a single token. Splitting into a namespace condition + a name pattern is the working idiom.
-
-## CSS hooks for customization
-
-The styling sits behind two top-level hooks you can override via `MediaWiki:Common.css` or per-skin custom CSS:
-
-| Selector | Scope |
-| :--- | :--- |
-| `.labki-forum-new-post-btn` | Bundled "new topic" button. Restyle freely; the click handler lives on the class plus the `[data-labki-forum-new-post]` attribute. |
-| `html.labki-forum-topic` | Set server-side on every odd-namespace subpage. All topic-card chrome (frame, accent stripe, reply cards, hidden `#firstHeading` / TOC) is scoped under this. Override individual rules to retune; remove the class server-side to opt out wholesale. |
-| `.labki-forum-back` | The "← parent" breadcrumb anchor in `#contentSub`. |
-
-## Known caveats
-
-### DT-derived counts land asynchronously
-
-`Comment count`, `Participant count`, and `Topic starter` are computed by running DT's `CommentParser` over the saved revision's Parsoid HTML. That can't happen inline at `ParserAfterParse` (Parsoid HTML isn't available yet), so the flow is:
-
-1. `PageSaveComplete` pushes a `labkiForumDTAnnotate` job onto the queue.
-2. The jobrunner picks it up (production: the bundled jobrunner sidecar; dev: `php maintenance/runJobs.php` or any save triggers it), parses Parsoid HTML via `HookUtils::parseRevisionParsoidHtml`, caches `{count, people, starter}` in `MainObjectStash` keyed by `(article_id, rev_id)`, and runs `RefreshLinksJob` inline.
-3. `RefreshLinksJob` re-renders the page; the `ParserAfterParse` hook reads the stash and contributes the three DT-derived properties through SMW's normal parser-data channel; SMW's `LinksUpdate` writes the full bundle (title-derived + H2-derived + DT-derived) in one atomic update.
-
-Implications:
-- **Brief lag between save and forum-index update.** During the seconds between save and jobrunner pickup, the index shows the topic with `Replies = empty`. Resolves automatically on the next jobrunner cycle.
-- **No race with parser-cache eviction.** Subsequent re-parses (manual purge, eviction, another extension's `RefreshLinksJob`) also read the stash and re-emit the same DT-derived values, so SMW's stored data stays consistent for the revision's lifetime.
-- **If Parsoid fails** (resource limit, etc.) the job silently leaves the DT-derived bundle absent; the next save retries.
-- **Backfilling existing topics**: queue the job for each topic manually (`runJobs.php`), or just edit each topic once.
-
-### Counts include the OP
-
-A topic with no replies reads as "1 comment, 1 participant" — Discourse-style. Subtract 1 in your `#ask` view if you want a strict "replies" count.
-
-### DISPLAYTITLE fires on every odd-namespace subpage
-
-Plain `Talk:Article/Archive_1` pages also pick up the forum chrome and DISPLAYTITLE auto-set. That's an acceptable default for a forum-oriented wiki; opt-out per-page by adding a `{{DISPLAYTITLE:...}}` override or overriding the styling locally. To scope strictly to a single namespace, narrow the namespace check in `mediawiki/extensions.platform.php`.
-
-### DEFAULTSORT is pinned
-
-The `ParserAfterParse` hook unconditionally sets `__DEFAULTSORT__` to the canonical prefixed title on forum topic pages. This neutralizes SMW's DisplayTitle annotator, which would otherwise hijack the sortkey to the displaytitle and break LIKE-pattern queries like `[[~*Miniscopes/*]]`. If you need a different sort key on a topic page, override it explicitly in the page's wikitext.
-
-### SESP `_CUSER` is broken on MW 1.44
-
-SESP's "Page author" property would surface "Started by" via a built-in route, but its `CreatorPropertyAnnotator` type-hints the legacy `\Title` class while MW 1.44 emits `\MediaWiki\Title\Title`, throwing a `TypeError` mid-rebuild. The custom `Topic starter` property fills the same role. Re-enable SESP's `_CUSER` once the upstream fix lands.
-
-## Where the wiring lives
-
-| File | Role |
-| :--- | :--- |
-| `mediawiki/extensions.platform.php` | Hook registrations: `SMW::Property::initProperties` (5 custom properties), `ParserAfterParse` (DISPLAYTITLE / DEFAULTSORT / title- and stash-derived SMW data), `PageSaveComplete` (schedules `labkiForumDTAnnotate` job), `BeforePageDisplay` (HTML class + breadcrumb subtitle). Also defines the `LabkiForumDTAnnotateJob` class that owns the DT parse + stash + `RefreshLinksJob` cycle. |
-| `resources/scripts/labki-forum.js` | Click handler bound to `.labki-forum-new-post-btn` and `[data-labki-forum-new-post]`. |
-| `resources/styles/labki-forum.less` | All visual styling (button + topic-card chrome). Codex tokens with hex fallbacks. |
-| `compose/dev-config/LocalSettings.user.php` | Reference deployment of the namespace + SMW configuration above (used by the dev compose target only). |
-| `scripts/probe-forum-page.php` | End-to-end smoke probe — saves a synthetic topic and reads back the hook outputs. Covered by `ci/smoke-test.sh`. |
+For pre-existing forum topics on a deployed wiki, run
+`maintenance/run.php extensions/DiscussionForum/maintenance/backfillForumAnnotations.php`
+once after the cutover to re-emit DT-derived properties for content
+saved before the extension was loaded.
