@@ -103,42 +103,145 @@ $wgHooks['SMW::Property::initProperties'][] = static function ( $propertyRegistr
     return true;
 };
 
-// On forum topic pages, populate forum metadata: Has forum (containing
-// forum, derived from the page's base title), Topic subject (first H2),
-// Topic starter (first signature author), Comment count (signed comments),
-// Participant count (unique authors). Also mirror the subject into
-// DISPLAYTITLE so browser tabs and inbound wikilinks render the human-
-// readable subject instead of the <UTC>_<user> slug.
+// Job: re-annotate a forum topic's DT-derived SMW properties (Comment
+// count, Participant count, Topic starter) after each save.
 //
-// Has forum is derivable from the title alone (no wikitext parsing
-// needed), so it's always set on every topic page regardless of whether
-// the page has any signed comments yet — this means freshly-saved empty
-// topics still surface in cross-forum activity feeds.
+// We can't compute these synchronously in ParserAfterParse — DT's
+// CommentParser needs final Parsoid HTML, which isn't available inside
+// the parser pipeline. So the flow is:
+//
+//   PageSaveComplete  →  push LabkiForumDTAnnotateJob
+//   Job::run()        →  parseRevisionParsoidHtml() via DT
+//                     →  cache {count, people, starter} keyed by rev id
+//                     →  run RefreshLinksJob inline to re-parse the page
+//   ParserAfterParse  →  reads cache, contributes the 3 props through
+//                        SMW's normal parser-data channel
+//   SMW LinksUpdate   →  stores the full bundle (title-derived + DT-
+//                        derived) in one atomic write
+//
+// Routing through the parser channel (rather than calling
+// Store::updateData directly) avoids data loss: any subsequent re-parse
+// — manual purge, parser cache eviction, RefreshLinksJob from another
+// extension — also reads the stash and re-emits the same DT-derived
+// values, so SMW's stored data stays consistent for the lifetime of
+// the revision.
+//
+// Counts are exactly what DT itself displays in its bell / subscription
+// UI: locale-correct (handles non-UTC $wgLocaltimezone, custom
+// signatures, transcluded comments, fully-localized month names).
+class LabkiForumDTAnnotateJob extends \Job {
+    public function __construct( $title, $params = [] ) {
+        parent::__construct( 'labkiForumDTAnnotate', $title, $params );
+        // Two saves on the same topic can land back-to-back (OP saves,
+        // then immediately replies). Deduplicate so the queue carries
+        // at most one pending re-annotation per page.
+        $this->removeDuplicates = true;
+    }
+
+    public function run() {
+        $title = $this->getTitle();
+        if ( !$title ) {
+            return true;
+        }
+
+        $services = \MediaWiki\MediaWikiServices::getInstance();
+        $rev = $services->getRevisionLookup()->getRevisionByTitle( $title );
+        if ( !$rev ) {
+            return true;
+        }
+
+        $status = \MediaWiki\Extension\DiscussionTools\Hooks\HookUtils
+            ::parseRevisionParsoidHtml( $rev, __METHOD__ );
+        if ( !$status->isOK() ) {
+            // Parsoid resource-limit or similar transient failure — leave
+            // the DT-derived properties absent for this revision; the
+            // next save will retry.
+            return true;
+        }
+
+        $threads = $status->getValue()->getThreads();
+        if ( !$threads ) {
+            // Empty topic (no H2, no comments yet) — nothing to annotate.
+            return true;
+        }
+        $heading = $threads[0];
+
+        $oldestReply = $heading->getOldestReply();
+        $payload = [
+            'count'   => (int)$heading->getCommentCount(),
+            'people'  => count( $heading->getAuthorsBelow() ),
+            'starter' => $oldestReply ? (string)$oldestReply->getAuthor() : '',
+        ];
+
+        $stash = $services->getMainObjectStash();
+        $key = $stash->makeKey(
+            'labki-forum-dt',
+            $title->getArticleID(),
+            $rev->getId()
+        );
+        // TTL_MONTH covers normal parser-cache eviction windows; on the
+        // rare cache miss past expiry, the next save (which always
+        // re-enqueues this job) repopulates.
+        $stash->set( $key, $payload, $stash::TTL_MONTH );
+
+        // Force SMW to re-store the page with the fresh DT data flowing
+        // through ParserAfterParse. RefreshLinksJob re-renders, which
+        // runs our hook (now with a cache hit) and SMW's LinksUpdate.
+        ( new \RefreshLinksJob( $title, [] ) )->run();
+
+        return true;
+    }
+}
+$wgJobClasses['labkiForumDTAnnotate'] = LabkiForumDTAnnotateJob::class;
+
+// Forum-topic save → schedule DT annotation. Detection is the same as
+// the ParserAfterParse hook: odd-namespace (talk-side) subpage.
+$wgHooks['PageSaveComplete'][] = static function ( $wikiPage, $user, $summary, $flags, $rev ) {
+    $title = $wikiPage->getTitle();
+    if ( !$title || ( $title->getNamespace() % 2 ) !== 1
+        || strpos( $title->getDBkey(), '/' ) === false
+    ) {
+        return;
+    }
+    \MediaWiki\MediaWikiServices::getInstance()->getJobQueueGroup()
+        ->push( new LabkiForumDTAnnotateJob( $title, [] ) );
+};
+
+// On forum topic pages, populate forum metadata via the parser channel:
+//   - Has forum         (title-derived, always set)
+//   - Topic subject     (first H2)
+//   - Comment count     (from DT cache stashed by LabkiForumDTAnnotateJob)
+//   - Participant count (ditto)
+//   - Topic starter     (ditto)
+// Also mirror the subject into DISPLAYTITLE so browser tabs and inbound
+// wikilinks render the human-readable subject instead of the
+// <UTC>_<user> slug.
 //
 // === Why ParserAfterParse, not ContentAlterParserOutput ===
 // SMW's ParserAfterTidy reads page properties (e.g. displaytitle) before
 // the Content layer fires; ParserAfterParse runs earlier in the parser
 // pipeline and gets the values into ParserOutput in time for SMW.
 //
+// === Why a cache + RefreshLinksJob for the DT-derived bundle ===
+// DT's CommentParser needs final Parsoid HTML, which isn't available at
+// this hook. The job (LabkiForumDTAnnotateJob, above) does the Parsoid
+// render after save, caches the result, and triggers a re-parse. This
+// hook then becomes a single channel for all forum properties — any
+// future re-parse (manual purge, parser-cache eviction) reads the same
+// cache and re-emits the same DT-derived values, so SMW's stored data
+// stays consistent regardless of which path retriggered the parse.
+//
 // === Caveats / known limits ===
-// 1. English-locale only. Comments are detected by counting "(UTC)"
-//    signature timestamps; authors by counting [[User:Name]] wikilinks.
-//    Localized signatures (e.g. "(MEZ)" on de.wiki, "(コメント)" patterns)
-//    will undercount. Acceptable for an English-language dev wiki; revisit
-//    if this ships to a multilingual deployment.
-// 2. Counts include the OP — a fresh topic with no replies reads as
+// 1. Counts include the OP — a fresh topic with no replies reads as
 //    "1 comment, 1 participant", matching Discourse-style conventions.
 //    If a strict "replies" count is wanted, subtract 1.
-// 3. DT has authoritative APIs (ContentHeadingItem::getCommentCount,
-//    getAuthorsBelow) that handle locale and edge cases correctly, but
-//    they need DT's CommentParser to run on already-parsed HTML, which
-//    isn't available at this hook. Migrating to those would mean a
-//    deferred-update model (job-queue annotation after page render),
-//    significantly more code for marginal accuracy gain at our scale.
-// 4. Wikitext is pulled from the revision rather than the $text param
-//    because $text at ParserAfterParse is half-parsed (strip markers
-//    in, link-rendering pending) — neither wikitext nor HTML regex
-//    matches reliably against it.
+// 2. Brief window between save and DT job completion where the page
+//    has Has forum + Topic subject but no DT-derived counts. Resolves
+//    on the next jobrunner cycle (~seconds in production with the
+//    bundled jobrunner sidecar). The forum index shows the topic as
+//    "0 replies" during this window.
+// 3. If Parsoid fails (resource limit, etc.) the DT-derived bundle is
+//    skipped silently for that revision; the next save retries.
 $wgHooks['ParserAfterParse'][] = static function ( $parser, &$text, $stripState ) {
     $title = $parser->getTitle();
     if ( !$title || ( $title->getNamespace() % 2 ) !== 1
@@ -161,31 +264,6 @@ $wgHooks['ParserAfterParse'][] = static function ( $parser, &$text, $stripState 
         $parserOutput->setDisplayTitle( $subject );
     }
 
-    // $text at ParserAfterParse is in a half-parsed intermediate state —
-    // strip-state markers in place, link-rendering not yet finalized — so
-    // matching either wikitext or HTML against it is unreliable. Pull the
-    // raw wikitext from the revision being parsed instead.
-    $wikitext = '';
-    $rev = $parser->getRevisionRecordObject();
-    if ( $rev ) {
-        $content = $rev->getContent( \MediaWiki\Revision\SlotRecord::MAIN );
-        if ( $content instanceof \TextContent ) {
-            $wikitext = $content->getText();
-        }
-    }
-    $commentCount = preg_match_all( '/\(UTC\)/', $wikitext );
-    preg_match_all( '/\[\[User:([^|\]\/]+)/i', $wikitext, $matches );
-    $rawAuthors = array_values( array_filter(
-        array_map( 'trim', $matches[1] ),
-        static fn( $a ) => $a !== ''
-    ) );
-    // Lowercase only for dedupe — MediaWiki user-page titles past the first
-    // letter are case-sensitive (alice and Alice are distinct), so the
-    // unique-count is fine on lowercased values, but the starter name has to
-    // keep its original case before flowing into Title::makeTitleSafe.
-    $participantCount = count( array_unique( array_map( 'strtolower', $rawAuthors ) ) );
-    $starter = $rawAuthors[0] ?? '';
-
     $parserData = \SMW\Services\ServicesFactory::getInstance()->newParserData( $title, $parserOutput );
     $semanticData = $parserData->getSemanticData();
 
@@ -204,33 +282,41 @@ $wgHooks['ParserAfterParse'][] = static function ( $parser, &$text, $stripState 
         );
     }
 
-    // Wikitext-derived annotations only fire when the page has substance —
-    // skip the SMW work on freshly-saved empty topics that have neither
-    // an H2 nor a signed comment yet.
-    if ( $subject !== '' || $commentCount > 0 ) {
-        if ( $subject !== '' ) {
-            $semanticData->addPropertyObjectValue(
-                new \SMW\DIProperty( '___forum_subject' ),
-                new \SMWDIBlob( $subject )
-            );
-        }
-        if ( $commentCount > 0 ) {
+    if ( $subject !== '' ) {
+        $semanticData->addPropertyObjectValue(
+            new \SMW\DIProperty( '___forum_subject' ),
+            new \SMWDIBlob( $subject )
+        );
+    }
+
+    // DT-derived bundle: read whatever LabkiForumDTAnnotateJob stashed
+    // for this revision. Absent on freshly-saved revs before the job
+    // has run; present afterward (and on every subsequent re-parse).
+    $rev = $parser->getRevisionRecordObject();
+    if ( $rev ) {
+        $stash = \MediaWiki\MediaWikiServices::getInstance()->getMainObjectStash();
+        $dt = $stash->get( $stash->makeKey(
+            'labki-forum-dt',
+            $title->getArticleID(),
+            $rev->getId()
+        ) );
+        if ( is_array( $dt ) && ( $dt['count'] ?? 0 ) > 0 ) {
             $semanticData->addPropertyObjectValue(
                 new \SMW\DIProperty( '___forum_comments' ),
-                new \SMWDINumber( $commentCount )
+                new \SMWDINumber( (int)$dt['count'] )
             );
             $semanticData->addPropertyObjectValue(
                 new \SMW\DIProperty( '___forum_participants' ),
-                new \SMWDINumber( $participantCount )
+                new \SMWDINumber( (int)$dt['people'] )
             );
-        }
-        if ( $starter !== '' ) {
-            $starterTitle = \MediaWiki\Title\Title::makeTitleSafe( NS_USER, $starter );
-            if ( $starterTitle ) {
-                $semanticData->addPropertyObjectValue(
-                    new \SMW\DIProperty( '___forum_starter' ),
-                    \SMW\DIWikiPage::newFromTitle( $starterTitle )
-                );
+            if ( ( $dt['starter'] ?? '' ) !== '' ) {
+                $starterTitle = \MediaWiki\Title\Title::makeTitleSafe( NS_USER, $dt['starter'] );
+                if ( $starterTitle ) {
+                    $semanticData->addPropertyObjectValue(
+                        new \SMW\DIProperty( '___forum_starter' ),
+                        \SMW\DIWikiPage::newFromTitle( $starterTitle )
+                    );
+                }
             }
         }
     }

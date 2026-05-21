@@ -174,10 +174,12 @@ if [ "$DOCKER_TARGET" = "dev" ] && [ "$EXTENSIONS_MODE" = "enabled" ]; then
             || fail "SMW custom property '$pid' is not registered (forum hook didn't fire?)."
     done
 
-    # End-to-end probe: parse a synthetic Forum_talk subpage in-memory and
-    # verify the labki-forum hooks set DISPLAYTITLE, DEFAULTSORT, and the
-    # four SMW properties to the values we expect for known wikitext.
-    echo "[smoke-test] Probing labki-forum hooks via in-memory parse..."
+    # End-to-end probe: save a synthetic Forum_talk subpage, drain the
+    # labkiForumDTAnnotate job (which parses Parsoid HTML via DT and runs
+    # RefreshLinksJob inline), and verify all five SMW properties plus
+    # DISPLAYTITLE / DEFAULTSORT landed correctly. Exercises the full
+    # save → DT job → SMW write cycle that runs on every real topic save.
+    echo "[smoke-test] Probing labki-forum save + DT-annotate-job cycle..."
     FORUM_PROBE=$(docker compose -f "$COMPOSE_FILE" exec -T wiki php /opt/labki/scripts/probe-forum-page.php) \
         || { echo "[smoke-test] forum-probe output:"; echo "$FORUM_PROBE"; fail "probe-forum-page.php failed inside container."; }
     echo "[smoke-test] Forum probe returned:"
@@ -192,11 +194,11 @@ if [ "$DOCKER_TARGET" = "dev" ] && [ "$EXTENSIONS_MODE" = "enabled" ]; then
     [ "$(fextract FORUM_SUBJECT)" = "Hello smoke" ] \
         || fail "FORUM_SUBJECT SMW property is '$(fextract FORUM_SUBJECT)', expected 'Hello smoke'."
     [ "$(fextract FORUM_COMMENTS)" = "3" ] \
-        || fail "FORUM_COMMENTS is '$(fextract FORUM_COMMENTS)', expected 3 (one per (UTC) signature)."
+        || fail "FORUM_COMMENTS is '$(fextract FORUM_COMMENTS)', expected 3 (DT's ContentHeadingItem::getCommentCount of three signed comments under the H2)."
     [ "$(fextract FORUM_PARTICIPANTS)" = "2" ] \
-        || fail "FORUM_PARTICIPANTS is '$(fextract FORUM_PARTICIPANTS)', expected 2 unique authors."
+        || fail "FORUM_PARTICIPANTS is '$(fextract FORUM_PARTICIPANTS)', expected 2 unique authors (DT's getAuthorsBelow)."
     [ "$(fextract FORUM_STARTER)" = "User:Bob" ] \
-        || fail "FORUM_STARTER is '$(fextract FORUM_STARTER)', expected 'User:Bob' (case-folding regression?)."
+        || fail "FORUM_STARTER is '$(fextract FORUM_STARTER)', expected 'User:Bob' (DT's getOldestReply()->getAuthor — case-folding regression?)."
     [ "$(fextract FORUM_PARENT)" = "Forum:Smoketest" ] \
         || fail "FORUM_PARENT is '$(fextract FORUM_PARENT)', expected 'Forum:Smoketest' (talk-base -> subject derivation regression?)."
 fi

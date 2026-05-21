@@ -2,24 +2,26 @@
 /**
  * probe-forum-page.php - end-to-end smoke probe for the labki-forum hooks.
  *
- * Saves a synthetic Forum_talk subpage with a known wikitext shape (which
- * triggers the ParserAfterParse hook on the saved revision), then reads
- * back what landed in MediaWiki's parser output and SMW's store. Prints
- * KEY=value lines reporting:
+ * Exercises the full save → DT-annotate-job → RefreshLinksJob →
+ * ParserAfterParse → SMW write cycle, then reads back the resulting
+ * semantic data. Prints KEY=value lines reporting:
  *
  *   DISPLAYTITLE       - first H2 promoted via setDisplayTitle
  *   DEFAULTSORT        - canonical title pinned to neutralize SMW's
  *                        sortkey hijack from the DisplayTitle annotator
- *   FORUM_COMMENTS     - count of (UTC) signature timestamps in wikitext
- *   FORUM_PARTICIPANTS - unique [[User:X]] authors
- *   FORUM_STARTER      - first author, as User:Name
- *   FORUM_SUBJECT      - same string as DISPLAYTITLE, captured separately
- *                        through SMW's custom property channel
+ *   FORUM_SUBJECT      - same string as DISPLAYTITLE, captured through
+ *                        SMW's custom property channel
+ *   FORUM_COMMENTS     - comment count from DT's CommentParser
+ *   FORUM_PARTICIPANTS - unique authors from DT's CommentParser
+ *   FORUM_STARTER      - oldest reply's author, as User:Name
+ *   FORUM_PARENT       - Has forum landing page (title-derived)
  *
- * The hook reads wikitext via $parser->getRevisionRecordObject(), so an
- * in-memory Parser::parse() (no revision) doesn't exercise the SMW path.
- * Saving via PageUpdater is the realistic flow that mirrors what happens
- * when a real user creates a topic.
+ * Architecture note: the DT-derived bundle (FORUM_COMMENTS /
+ * FORUM_PARTICIPANTS / FORUM_STARTER) is populated asynchronously via
+ * the labkiForumDTAnnotate job. The smoke test runs the job inline
+ * (the dev compose target doesn't start a jobrunner sidecar; see
+ * ci/smoke-test.sh), which in turn runs RefreshLinksJob inline so SMW
+ * re-stores the page with the DT data flowing through ParserAfterParse.
  *
  * Skips gracefully (exit 0, prints SKIP=...) when run on a target that
  * doesn't have the Forum_talk namespace registered (i.e. the prod CI matrix
@@ -32,6 +34,7 @@
 require_once '/var/www/html/maintenance/Maintenance.php';
 
 use MediaWiki\CommentStore\CommentStoreComment;
+use MediaWiki\Deferred\DeferredUpdates;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Revision\SlotRecord;
 use MediaWiki\Title\Title;
@@ -54,9 +57,13 @@ class LabkiProbeForumPage extends Maintenance {
             'Smoketest/2026-01-01_120000_Bob'
         );
 
-        // Two unique authors across three signed comments. 'Bob' uses
-        // mixed case so a case-folding regression in the starter extraction
-        // would surface as User:bob (or a redlink) rather than User:Bob.
+        // Two unique authors across three signed comments. Bob signs both
+        // the OP and a followup so DT's author dedup is exercised; 'Bob'
+        // uses mixed case so a case-folding regression in the starter
+        // extraction would surface as User:bob (or a redlink) rather than
+        // User:Bob. Sigs use (UTC) to match the dev compose's default
+        // $wgLocaltimezone — DT's locale-time-zone correctness is its own
+        // contract; this probe just verifies the hook plumbing end-to-end.
         $wikitext = "== Hello smoke ==\n\n"
             . "Initial post body. [[User:Bob|Bob]] ([[User talk:Bob|talk]]) 12:00, 1 January 2026 (UTC)\n\n"
             . ":Reply from another user. [[User:Alice|Alice]] ([[User talk:Alice|talk]]) 12:05, 1 January 2026 (UTC)\n\n"
@@ -76,10 +83,31 @@ class LabkiProbeForumPage extends Maintenance {
                 . $updater->getStatus()->getWikiText( false, false, 'en' ) );
         }
 
-        // Force a fresh parse so the hook re-runs against the saved revision
-        // (the parser cache may already hold a render from a prior smoke run).
+        // saveRevision schedules SMW's first write (Has forum + Topic
+        // subject + special props) as an in-request deferred update.
+        // Flush before running the DT annotate job so the job's
+        // RefreshLinksJob doesn't race the first write.
+        DeferredUpdates::doUpdates();
+
+        // Drain the DT annotate jobs queued by PageSaveComplete. Each
+        // job parses Parsoid HTML via DT, caches counts, and runs
+        // RefreshLinksJob inline; RefreshLinksJob then re-renders and
+        // re-stores SMW data with the DT-derived bundle in place.
+        $jqg = $services->getJobQueueGroup();
+        $drained = 0;
+        while ( ( $job = $jqg->pop( 'labkiForumDTAnnotate' ) ) ) {
+            $job->run();
+            $drained++;
+            if ( $drained > 5 ) {
+                $this->fatalError( 'Runaway labkiForumDTAnnotate job loop (>5 iterations).' );
+            }
+        }
+        DeferredUpdates::doUpdates();
+
+        // Now re-fetch the page's parser output so we can report
+        // DISPLAYTITLE / DEFAULTSORT that survived the cycle.
         $popts = ParserOptions::newFromAnon();
-        $popts->setRenderReason( 'smoke-probe' );
+        $popts->setRenderReason( 'smoke-probe-post-dt' );
         $parserOutput = $page->getParserOutput( $popts ) ?: $page->getParserOutput();
 
         echo 'DISPLAYTITLE=' . ( $parserOutput ? $parserOutput->getDisplayTitle() : '' ) . "\n";
@@ -87,9 +115,6 @@ class LabkiProbeForumPage extends Maintenance {
             . ( $parserOutput ? ( $parserOutput->getPageProperty( 'defaultsort' ) ?? '' ) : '' )
             . "\n";
 
-        // SMW persists semantic data via its own hooks during the save flow,
-        // so reading from the store gives the authoritative view of what the
-        // labki-forum hooks contributed.
         $store = \SMW\StoreFactory::getStore();
         $smwData = $store->getSemanticData( \SMW\DIWikiPage::newFromTitle( $title ) );
 
