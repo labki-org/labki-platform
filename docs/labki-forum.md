@@ -12,9 +12,9 @@ Bundled into the platform with no extra configuration beyond namespace setup:
 - **`__DISPLAYTITLE__` auto-set** to the topic's first H2, so browser tabs and inbound wikilinks render the human-readable subject instead of the `<UTC>_<user>` slug.
 - **Five custom SMW properties** populated per topic so a landing page can render a forum index via `#ask`:
   - `Topic subject` (Text) — first H2 of the page
-  - `Topic starter` (Page) — first signature author, as a `User:Name` link
-  - `Comment count` (Number) — count of signed `(UTC)` timestamps
-  - `Participant count` (Number) — unique authors
+  - `Topic starter` (Page) — DT's oldest-reply author, as a `User:Name` link
+  - `Comment count` (Number) — comment count from DT's `ContentHeadingItem::getCommentCount()` (locale-correct: handles any `$wgLocaltimezone`, custom signatures, and transcluded comments)
+  - `Participant count` (Number) — unique authors from DT's `getAuthorsBelow()`
   - `Has forum` (Page) — the topic's containing forum landing, derived from the page's base title (`Forum_talk:Hardware/<slug>` → `Forum:Hardware`). Always set, even on freshly-saved empty topics. Enables chained queries like `[[Has forum.Has parent forum::Forum:Home]]` for activity feeds on hub-style landing pages.
 
 ## Setup for a new namespace pair
@@ -127,9 +127,19 @@ The styling sits behind two top-level hooks you can override via `MediaWiki:Comm
 
 ## Known caveats
 
-### English-locale signature heuristic
+### DT-derived counts land asynchronously
 
-`Comment count` and `Participant count` are extracted by counting `(UTC)` timestamps and `[[User:Name]]` wikilinks in the saved revision's wikitext. Localized signatures (`(MEZ)` on de.wiki, etc.) will undercount. Switching to DT's authoritative `ContentHeadingItem::getCommentCount()` would require a deferred-update model since DT's parser needs already-rendered HTML. Acceptable for English-language deployments; revisit if shipping to a multilingual wiki.
+`Comment count`, `Participant count`, and `Topic starter` are computed by running DT's `CommentParser` over the saved revision's Parsoid HTML. That can't happen inline at `ParserAfterParse` (Parsoid HTML isn't available yet), so the flow is:
+
+1. `PageSaveComplete` pushes a `labkiForumDTAnnotate` job onto the queue.
+2. The jobrunner picks it up (production: the bundled jobrunner sidecar; dev: `php maintenance/runJobs.php` or any save triggers it), parses Parsoid HTML via `HookUtils::parseRevisionParsoidHtml`, caches `{count, people, starter}` in `MainObjectStash` keyed by `(article_id, rev_id)`, and runs `RefreshLinksJob` inline.
+3. `RefreshLinksJob` re-renders the page; the `ParserAfterParse` hook reads the stash and contributes the three DT-derived properties through SMW's normal parser-data channel; SMW's `LinksUpdate` writes the full bundle (title-derived + H2-derived + DT-derived) in one atomic update.
+
+Implications:
+- **Brief lag between save and forum-index update.** During the seconds between save and jobrunner pickup, the index shows the topic with `Replies = empty`. Resolves automatically on the next jobrunner cycle.
+- **No race with parser-cache eviction.** Subsequent re-parses (manual purge, eviction, another extension's `RefreshLinksJob`) also read the stash and re-emit the same DT-derived values, so SMW's stored data stays consistent for the revision's lifetime.
+- **If Parsoid fails** (resource limit, etc.) the job silently leaves the DT-derived bundle absent; the next save retries.
+- **Backfilling existing topics**: queue the job for each topic manually (`runJobs.php`), or just edit each topic once.
 
 ### Counts include the OP
 
@@ -151,7 +161,7 @@ SESP's "Page author" property would surface "Started by" via a built-in route, b
 
 | File | Role |
 | :--- | :--- |
-| `mediawiki/extensions.platform.php` | Hook registrations: `SMW::Property::initProperties` (4 custom properties), `ParserAfterParse` (DISPLAYTITLE / DEFAULTSORT / SMW data), `BeforePageDisplay` (HTML class + breadcrumb subtitle). |
+| `mediawiki/extensions.platform.php` | Hook registrations: `SMW::Property::initProperties` (5 custom properties), `ParserAfterParse` (DISPLAYTITLE / DEFAULTSORT / title- and stash-derived SMW data), `PageSaveComplete` (schedules `labkiForumDTAnnotate` job), `BeforePageDisplay` (HTML class + breadcrumb subtitle). Also defines the `LabkiForumDTAnnotateJob` class that owns the DT parse + stash + `RefreshLinksJob` cycle. |
 | `resources/scripts/labki-forum.js` | Click handler bound to `.labki-forum-new-post-btn` and `[data-labki-forum-new-post]`. |
 | `resources/styles/labki-forum.less` | All visual styling (button + topic-card chrome). Codex tokens with hex fallbacks. |
 | `compose/dev-config/LocalSettings.user.php` | Reference deployment of the namespace + SMW configuration above (used by the dev compose target only). |
