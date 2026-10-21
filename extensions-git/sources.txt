@@ -1,7 +1,7 @@
 # Format: <ExtensionName> <GitURL> <GitRef> <Type:extension|skin>
 MsUpload https://github.com/wikimedia/mediawiki-extensions-MsUpload.git REL1_44 extension
-Lockdown https://gerrit.wikimedia.org/r/mediawiki/extensions/Lockdown.git REL1_44 extension
-ConfirmAccount https://gerrit.wikimedia.org/r/mediawiki/extensions/ConfirmAccount.git REL1_44 extension
+Lockdown https://github.com/wikimedia/mediawiki-extensions-Lockdown.git REL1_44 extension
+ConfirmAccount https://github.com/wikimedia/mediawiki-extensions-ConfirmAccount.git REL1_44 extension
 MWAssistant https://github.com/labki-org/MWAssistant.git main extension
 SemanticSchemas https://github.com/labki-org/SemanticSchemas.git feature/dispatcher-bakes-display-schema extension
 LabkiPageFormsInputs https://github.com/labki-org/LabkiPageFormsInputs.git main extension
