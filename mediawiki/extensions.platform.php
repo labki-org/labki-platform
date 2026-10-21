@@ -13,8 +13,7 @@ if (!defined('MEDIAWIKI')) {
 // --- Semantic MediaWiki Ecosystem (Composer-installed) ---
 
 wfLoadExtension('SemanticMediaWiki');
-enableSemantics($wgServer);
-$smwgShowFactbox = SMW_FACTBOX_NONEMPTY;
+$smwgShowFactbox = 'nonempty';
 
 wfLoadExtension('SemanticResultFormats');
 wfLoadExtension('SemanticCompoundQueries');
@@ -38,7 +37,7 @@ wfLoadExtension('Lockdown');
 //   $wgSemanticSchemasDatatypeInputOverrides['Date'] = 'labki-datetime';
 wfLoadExtension('LabkiPageFormsInputs');
 
-// --- Bundled MediaWiki Extensions (shipped with MW 1.44) ---
+// --- Bundled MediaWiki Extensions (shipped with MediaWiki core) ---
 
 wfLoadExtension('CategoryTree');
 wfLoadExtension('Echo');

@@ -1,5 +1,5 @@
-ARG MEDIAWIKI_VERSION=1.44
-ARG MEDIAWIKI_PATCH_VERSION=1.44.6
+ARG MEDIAWIKI_VERSION=1.46
+ARG MEDIAWIKI_PATCH_VERSION=1.46.2
 # PHP base is pinned to a patch release so security fixes are an explicit,
 # reviewable bump. 8.3.36 fixes CVE-2026-109618 / CVE-2026-109619 (PHP2Shell,
 # unauthenticated RCE, highest risk under mod_php).
@@ -8,10 +8,11 @@ ARG PHP_IMAGE=php:8.3.36-apache
 # ==============================================================================
 # MediaWiki base
 # ==============================================================================
-# Reproduces wikimedia/mediawiki-docker's 1.44/apache/Dockerfile (last
-# upstream revision before 796d110). Upstream dropped 1.44 at EOL, so the
-# official mediawiki:1.44 image is frozen on PHP 8.3.33 and will never pick up
-# PHP security releases; building it ourselves lets us rebase onto a patched PHP.
+# Reproduces wikimedia/mediawiki-docker's <major>/apache/Dockerfile. We build
+# it ourselves rather than FROM mediawiki:<major> so the PHP base is pinned
+# here: the official tag only picks up PHP security releases whenever upstream
+# rebuilds it, and stops entirely once the MediaWiki branch reaches EOL (as
+# happened to 1.44, frozen on a PHP vulnerable to PHP2Shell).
 FROM ${PHP_IMAGE} AS mediawiki
 ARG MEDIAWIKI_VERSION
 ARG MEDIAWIKI_PATCH_VERSION
