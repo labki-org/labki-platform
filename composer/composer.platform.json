@@ -1,13 +1,13 @@
 {
     "require": {
-        "mediawiki/semantic-media-wiki": "~6.0",
-        "mediawiki/semantic-result-formats": "dev-master#7aed73963d6358cbd7567d3d309487e810d6526a",
-        "mediawiki/page-forms": "~6",
-        "mediawiki/maps": "~12",
-        "mediawiki/semantic-extra-special-properties": "~4",
-        "mediawiki/semantic-compound-queries": "~3",
+        "mediawiki/semantic-media-wiki": "~7.3",
+        "mediawiki/semantic-result-formats": "~6.0",
+        "mediawiki/page-forms": "^6.0.11",
+        "mediawiki/maps": "~15.0",
+        "mediawiki/semantic-extra-special-properties": "~5.0",
+        "mediawiki/semantic-compound-queries": "~4.0",
         "wikimedia/composer-merge-plugin": "^2.0",
-        "mediawiki/mermaid": "~6.0.1",
+        "mediawiki/mermaid": "~6.0.2",
         "scssphp/scssphp": "~1.11"
     },
     "minimum-stability": "dev",

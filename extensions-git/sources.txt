@@ -1,11 +1,11 @@
 # Format: <ExtensionName> <GitURL> <GitRef> <Type:extension|skin>
-MsUpload https://github.com/wikimedia/mediawiki-extensions-MsUpload.git REL1_44 extension
-Lockdown https://github.com/wikimedia/mediawiki-extensions-Lockdown.git REL1_44 extension
-ConfirmAccount https://github.com/wikimedia/mediawiki-extensions-ConfirmAccount.git REL1_44 extension
+MsUpload https://github.com/wikimedia/mediawiki-extensions-MsUpload.git REL1_46 extension
+Lockdown https://github.com/wikimedia/mediawiki-extensions-Lockdown.git REL1_46 extension
+ConfirmAccount https://github.com/wikimedia/mediawiki-extensions-ConfirmAccount.git REL1_46 extension
 MWAssistant https://github.com/labki-org/MWAssistant.git main extension
 SemanticSchemas https://github.com/labki-org/SemanticSchemas.git feature/dispatcher-bakes-display-schema extension
 LabkiPageFormsInputs https://github.com/labki-org/LabkiPageFormsInputs.git main extension
 DiscussionForum https://github.com/labki-org/DiscussionForum.git main extension
-NSFileRepo https://github.com/wikimedia/mediawiki-extensions-NSFileRepo.git REL1_44 extension
-Citizen https://github.com/StarCitizenTools/mediawiki-skins-Citizen.git v3.6.0 skin
+NSFileRepo https://github.com/wikimedia/mediawiki-extensions-NSFileRepo.git REL1_46 extension
+Citizen https://github.com/StarCitizenTools/mediawiki-skins-Citizen.git v3.24.0 skin
 Tweeki https://github.com/thaider/Tweeki.git master skin
